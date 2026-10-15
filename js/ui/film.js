@@ -29,10 +29,10 @@ const Film=(function(){
     gr=x.createLinearGradient(W*1.2,0,W*.5,0);gr.addColorStop(0,'rgba(120,170,255,.25)');gr.addColorStop(1,'rgba(120,170,255,0)');x.fillStyle=gr;x.fillRect(0,0,W*1.2,H*.75);
     x.restore();
     gr=x.createRadialGradient(cx,cy,ER*.995,cx,cy,ER*1.045);gr.addColorStop(0,'rgba(110,170,255,.9)');gr.addColorStop(.25,'rgba(80,140,255,.35)');gr.addColorStop(1,'rgba(60,110,255,0)');
-    x.fillStyle=gr;x.beginPath();x.arc(cx,cy,ER*1.045,0,7);x.arc(cx,cy,ER*.995,0,7,true);x.fill();
+    x.fillStyle=gr;x.beginPath();x.arc(cx,cy,ER*1.045,0,Math.PI*2);x.arc(cx,cy,ER*.995,0,Math.PI*2,true);x.fill();
     /* 日出：只在大气那一圈里亮，避免整块矩形发光 */
     const sx=W*(W<H?.98:1.08),sy=cy-Math.sqrt(Math.max(0,ER*ER-(sx-cx)*(sx-cx)));A.sunX=sx;A.sunY=sy;
-    x.save();x.beginPath();x.arc(cx,cy,ER*1.045,0,7);x.arc(cx,cy,ER*.97,0,7,true);x.clip();
+    x.save();x.beginPath();x.arc(cx,cy,ER*1.045,0,Math.PI*2);x.arc(cx,cy,ER*.97,0,Math.PI*2,true);x.clip();
     gr=x.createRadialGradient(sx,sy,0,sx,sy,W*.45);gr.addColorStop(0,'rgba(255,236,190,.95)');gr.addColorStop(.15,'rgba(255,190,110,.6)');gr.addColorStop(1,'rgba(255,150,80,0)');
     x.fillStyle=gr;x.fillRect(0,0,W*1.2,H*.75);x.restore();
     A.limb=c;

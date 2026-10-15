@@ -87,7 +87,7 @@ const ACHS=[
  {id:'hist',name:'读史的人',desc:'翻开 20 张史实卡',cond:function(){return S.hist.length>=20;}},
  {id:'terms',name:'法言法语',desc:'点开 12 个术语解释',cond:function(){return S.terms.length>=12;}},
  {id:'bench',name:'五案连裁',desc:'裁判练习裁完 5 案',cond:function(){return Object.keys(S.judge||{}).length>=5;}},
- {id:'daily',name:'连续三天',desc:'连续 3 天完成每日一案',cond:function(){return (S.daily&&S.daily.streak||0)>=3;}}
+ {id:'daily',name:'连续三天',desc:'连续 3 天完成每日速判',cond:function(){return (S.daily&&S.daily.streak||0)>=3;}}
 ];
 function checkAchs(){
   ACHS.forEach(function(a){

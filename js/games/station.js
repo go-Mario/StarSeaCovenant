@@ -11,6 +11,7 @@ GAMES.station=(function(){
     const C=stageCanvas(host),ctx=C.ctx,W=C.w(),H=C.h();
     const bg=GameArt.sky(W,H,{seed:41,band:{x:.5,y:.25,a:-.3,w:.12,al:.1}});
     const EL=GameArt.earthLimb(W,H*1.6,W/2,H*2.35,H*1.6,41);
+    const comp=document.createElement('canvas');comp.width=C.c.width;comp.height=C.c.height;const cg=comp.getContext('2d');let compY=-1;
     const MH=34,baseW=Math.min(W*.52,230);
     const st={stack:[{x:W/2-baseW/2,w:baseW,p:0}],cur:null,dir:1,speed:150,cam:0,camT:0,falling:[],labels:[],over:false,combo:0,t:0};
     function next(){const last=st.stack[st.stack.length-1],n=st.stack.length;const side=n%2?-1:1;
@@ -40,9 +41,10 @@ GAMES.station=(function(){
       st.t+=dt;
       if(st.cur){st.cur.x+=st.dir*st.speed*dt;if(st.cur.x<-st.cur.w*.6){st.dir=1;}if(st.cur.x>W-st.cur.w*.4){st.dir=-1;}}
       st.cam+=(st.camT-st.cam)*Math.min(1,dt*4);
-      ctx.drawImage(bg,0,0,W,H);
-      /* 地球边缘：往上搭得越高，地球沉得越低 */
-      ctx.drawImage(EL.c,0,st.cam*.3,W,H*1.6);
+      /* 地球边缘：往上搭得越高，地球沉得越低。星空和地球合成一张，只在镜头移动时重画 */
+      const ec=Math.round(st.cam*.3);
+      if(ec!==compY){compY=ec;cg.setTransform(comp.width/W,0,0,comp.height/H,0,0);cg.drawImage(bg,0,0,W,H);cg.drawImage(EL.c,0,ec,W,H*1.6);}
+      ctx.drawImage(comp,0,0,W,H);
       ctx.save();ctx.translate(0,st.cam);
       function mod(m,y,alpha,rot){
         const P=PARTNERS[m.p],h=MH-6;ctx.globalAlpha=alpha==null?1:alpha;
