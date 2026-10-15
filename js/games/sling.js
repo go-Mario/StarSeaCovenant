@@ -5,57 +5,67 @@
    ===================================================================== */
 GAMES.sling=(function(){
   const LV=[
-    {name:'去火星',start:[110,330],target:[860,250,46],pl:[{x:480,y:470,r:16,m:.35,look:'moon',n:'月球'}],pred:1.2},
-    {name:'木星借力',start:[100,520],target:[880,150,52],pl:[{x:520,y:330,r:34,m:2.4,look:'amber',n:'木星'}],wall:[[640,60,40,210]],pred:.75},
-    {name:'旅行者路线',start:[90,540],target:[950,80,40],pl:[{x:360,y:330,r:30,m:2.0,look:'amber',n:'木星'},{x:690,y:220,r:24,m:1.5,look:'gold',n:'土星'}],wall:[[520,0,30,190],[520,420,30,200]],pred:.5},
-    {name:'金唱片',start:[80,560],target:[960,60,36],pl:[{x:300,y:380,r:30,m:2.1,look:'amber',n:'木星'},{x:560,y:200,r:22,m:1.4,look:'gold',n:'土星'},{x:800,y:400,r:18,m:.9,look:'teal',n:'天王星'}],pred:.45}];
+    /* 难度用 tools/test/sim-sling.js 扫过：能命中的角度×力度组合依次约 2.5%、2.0%、0.9%、1.0%（最后一关预测线更短） */
+    {name:'去火星',start:[110,330],target:[860,250,60],tn:'火星',tl:'mars',pl:[{x:480,y:470,r:16,m:.35,look:'moon',n:'月球'}],pred:1.2},
+    {name:'木星借力',start:[100,520],target:[875,150,62],tn:'土星',tl:'gold',pl:[{x:429,y:287,r:34,m:1.87,look:'amber',n:'木星'}],wall:[[613,7,36,171]],pred:.75},
+    {name:'旅行者路线',start:[90,540],target:[950,80,54],tn:'天王星',tl:'teal',pl:[{x:360,y:330,r:30,m:2.0,look:'amber',n:'木星'},{x:690,y:220,r:24,m:1.5,look:'gold',n:'土星'}],wall:[[520,0,30,190],[520,420,30,200]],pred:.5},
+    {name:'金唱片',start:[80,560],target:[960,60,40],tn:'星际空间',pl:[{x:300,y:380,r:30,m:2.1,look:'amber',n:'木星'},{x:560,y:200,r:22,m:1.4,look:'gold',n:'土星'},{x:800,y:400,r:18,m:.9,look:'teal',n:'天王星'}],pred:.45}];
   const GREET=['你好','Hello','Jambo','नमस्ते','Hola','مرحبا','Kia ora','こんにちは','Здравствуйте','Olá','雨声','心跳','笑声','鸟鸣','海浪'];
   let stopF=null;
   function start(host,api,lvArg){
     const rec=SAVE.game('sling'),lvI=clamp(lvArg==null?Math.min(rec.level||0,LV.length-1):lvArg,0,LV.length-1),L=LV[lvI];
     const C=stageCanvas(host),ctx=C.ctx,W=C.w(),H=C.h();
     /* 竖屏时把棋盘转过来铺满：起点在左下，目标在右上（物理不变，只换画法和触点换算） */
-    const PORT=H>W*1.15,k=PORT?Math.min(H/1000,W/620):Math.min(W/1000,H/620),ox=PORT?(W-620*k)/2:(W-1000*k)/2,oy=PORT?(H-1000*k)/2:(H-620*k)/2;
+    const TOP=66,BOT=46,AH=H-TOP-BOT,PORT=H>W*1.15,k=PORT?Math.min(AH/1000,W/620):Math.min(W/1000,AH/620),ox=PORT?(W-620*k)/2:(W-1000*k)/2,oy=TOP+(PORT?(AH-1000*k)/2:(AH-620*k)/2);/* 上面留标题栏，下面留提示文字 */
     const P=PORT?function(x,y){return [ox+(620-y)*k,oy+(1000-x)*k];}:function(x,y){return [ox+x*k,oy+y*k];};
     const VEC=PORT?function(x,y){return [-y,-x];}:function(x,y){return [x,y];};
     const bg=GameArt.sky(W,H,{seed:31+lvI,tint:['#02030A','#0A0F22'],band:{x:.55,y:.5,a:-.42+lvI*.15,w:.14,al:.12},neb:[[.85,.2,.5,['120,70,170','60,120,180','150,80,120','70,90,190'][lvI],.12],[.3,.85,.45,'60,90,170',.08]]});
     /* 小行星带：按墙的范围预先撒好石头 */
-    const rocks=(L.wall||[]).map(function(w){const R=rng(w[0]*7+w[1]),list=[];const n=Math.round(w[2]*w[3]/140);
-      for(let i=0;i<n;i++){const r=(2.5+Math.pow(R(),2)*8)*k,pts=[];for(let j=0;j<7;j++){const a=j/7*6.283;pts.push([Math.cos(a)*r*(.7+R()*.45),Math.sin(a)*r*(.7+R()*.45)]);}const q=P(w[0]+4+R()*(w[2]-8),w[1]+4+R()*(w[3]-8));list.push({x:q[0],y:q[1],r:r,pts:pts,rot:R()*6,vr:(R()-.5)*.6});}
+    /* 小行星带：石头都撒在碰撞范围里面，看到撞上就是真撞上 */
+    const rocks=(L.wall||[]).map(function(w){const R=rng(w[0]*7+w[1]),list=[];const n=Math.round(w[2]*w[3]/60);
+      for(let i=0;i<n;i++){const rw=1.6+Math.pow(R(),2.2)*3.6,r=rw*k,pts=[];for(let j=0;j<7;j++){const a=j/7*6.283;pts.push([Math.cos(a)*r*(.7+R()*.4),Math.sin(a)*r*(.7+R()*.4)]);}
+        const q=P(w[0]+rw+R()*(w[2]-rw*2),w[1]+rw+R()*(w[3]-rw*2));list.push({x:q[0],y:q[1],r:r,pts:pts,rot:R()*6});}
       return list;});
+    /* 起点：探测器停在地球朝向目标的那一侧，不压在地球上 */
+    const tu=(function(){const dx=L.target[0]-L.start[0],dy=L.target[1]-L.start[1],l=Math.hypot(dx,dy);return [dx/l,dy/l];})(),earthW=[L.start[0]-tu[0]*24,L.start[1]-tu[1]*24];
     const trailCol='150,205,255';
     /* 不动的东西（星空、太阳的光、小行星带、行星、引力圈、地球、名字）在开局时画一次 */
     const stat=document.createElement('canvas');stat.width=C.c.width;stat.height=C.c.height;(function(){
       const g=stat.getContext('2d');g.scale(stat.width/W,stat.height/H);g.drawImage(bg,0,0,W,H);
       g.globalCompositeOperation='lighter';GameArt.soft(g,...P(-90,310),420*k,'255,190,120',.28);GameArt.soft(g,...P(-90,310),180*k,'255,220,160',.3);g.globalCompositeOperation='source-over';
       (L.wall||[]).forEach(function(w,i){
-        GameArt.soft(g,...P(w[0]+w[2]/2,w[1]+w[3]/2),Math.max(w[2],w[3])*k*.75,'200,170,140',.08);
+        GameArt.soft(g,...P(w[0]+w[2]/2,w[1]+w[3]/2),Math.max(w[2],w[3])*k*.6,'200,170,140',.07);
+        const a=P(w[0],w[1]),b=P(w[0]+w[2],w[1]+w[3]);g.strokeStyle='rgba(232,140,100,.28)';g.lineWidth=1;g.setLineDash([3,5]);g.strokeRect(Math.min(a[0],b[0]),Math.min(a[1],b[1]),Math.abs(b[0]-a[0]),Math.abs(b[1]-a[1]));g.setLineDash([]);
         rocks[i].forEach(function(r){g.save();g.translate(r.x,r.y);g.rotate(r.rot);
           const q=g.createLinearGradient(-r.r,-r.r,r.r,r.r);q.addColorStop(0,'#B8AFA2');q.addColorStop(.6,'#6E6760');q.addColorStop(1,'#2E2A27');g.fillStyle=q;
           g.beginPath();r.pts.forEach(function(p,j){j?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]);});g.closePath();g.fill();g.restore();});
       });
       const tg=L.target,tq=P(tg[0],tg[1]),tx=tq[0],ty=tq[1],tr=tg[2]*k;
       GameArt.soft(g,tx,ty,tr*1.6,'246,195,91',.18);
-      if(lvI===0)GameArt.drawPlanet(g,'mars',tx,ty,tr*.42,4);
+      if(L.tl)GameArt.drawPlanet(g,L.tl,tx,ty,tr*(L.tl==='gold'?.3:.4),9);
       g.strokeStyle='rgba(246,195,91,.3)';g.lineWidth=6;g.beginPath();g.arc(tx,ty,tr,0,Math.PI*2);g.stroke();
-      GameArt.caption(g,lvI===0?'火星':lvI===3?'星际空间':'目标',tx,ty-tr-14,{size:12,color:'#F6D58E',bg:.45});
+      GameArt.caption(g,L.tn,tx,ty-tr-14,{size:12,color:'#F6D58E',bg:.45});
       L.pl.forEach(function(pl){
         const pq=P(pl.x,pl.y),px=pq[0],py=pq[1],pr=pl.r*k;
-        g.strokeStyle='rgba(150,190,255,.10)';g.lineWidth=1;g.setLineDash([2,5]);[2.2,3.4,4.8].forEach(function(f){g.beginPath();g.arc(px,py,pr*f*Math.sqrt(pl.m),0,Math.PI*2);g.stroke();});g.setLineDash([]);
+        /* 引力范围：两圈淡淡的虚线，越重的行星圈越大 */
+        g.strokeStyle='rgba(150,190,255,.12)';g.lineWidth=1;g.setLineDash([2,5]);[1.9,2.9].forEach(function(f){g.beginPath();g.arc(px,py,pr*f*Math.sqrt(pl.m),0,Math.PI*2);g.stroke();});g.setLineDash([]);
         GameArt.drawPlanet(g,pl.look,px,py,pr,pl.x);
         GameArt.caption(g,pl.n,px,py+pr*(pl.look==='gold'?1.6:1)+16,{size:11,bg:.4,line:.12});
       });
-      GameArt.drawPlanet(g,'earth',...P(L.start[0],L.start[1]),12*k,3);
+      GameArt.drawPlanet(g,'earth',...P(earthW[0],earthW[1]),13*k,3);
     })();
-    const st={p:null,v:null,flying:false,trail:[],tries:0,aim:null,t:0,done:false,boom:0,anim:0};
-    function reset(){st.p={x:L.start[0],y:L.start[1]};st.v={x:0,y:0};st.flying=false;st.trail=[];st.t=0;st.assist={};}
+    const st={p:null,v:null,flying:false,trail:[],ghost:null,tries:0,aim:null,t:0,done:false,boom:0,anim:0,lock:false};
+    function reset(){st.p={x:L.start[0],y:L.start[1]};st.v={x:0,y:0};st.flying=false;st.trail=[];st.t=0;st.assist={};st.lock=false;}
+    /* 一次飞行结束：留下这一趟的轨迹作参照；爆炸或飞出画面的那一小会儿不接受新的拖动 */
+    function endFlight(delay){st.flying=false;st.lock=true;if(st.trail.length>2)st.ghost=st.trail.slice();setTimeout(reset,delay);}
     reset();
     api.setScore(L.name+' · 第 <b>'+(st.tries+1)+'</b> 次');
     function accel(p){let ax=0,ay=0;L.pl.forEach(function(pl){const dx=pl.x-p.x,dy=pl.y-p.y,d2=dx*dx+dy*dy+400,d=Math.sqrt(d2),f=pl.m*42000/d2;ax+=f*dx/d;ay+=f*dy/d;});return {x:ax,y:ay};}
     function hitWall(p){return (L.wall||[]).some(function(w){return p.x>w[0]&&p.x<w[0]+w[2]&&p.y>w[1]&&p.y<w[1]+w[3];});}
     function step(p,v,dt){const a=accel(p);v.x+=a.x*dt;v.y+=a.y*dt;p.x+=v.x*dt;p.y+=v.y*dt;}
     function toWorld(e){const r=C.c.getBoundingClientRect(),sx=e.clientX-r.left,sy=e.clientY-r.top;return PORT?{x:1000-(sy-oy)/k,y:620-(sx-ox)/k}:{x:(sx-ox)/k,y:(sy-oy)/k};}
-    C.c.addEventListener('pointerdown',function(e){if(st.flying||st.done)return;st.aim={s:toWorld(e),c:toWorld(e)};C.c.setPointerCapture(e.pointerId);});
+    C.c.addEventListener('pointerdown',function(e){if(st.flying||st.done||st.lock)return;st.aim={s:toWorld(e),c:toWorld(e)};C.c.setPointerCapture(e.pointerId);});
+    C.c.addEventListener('pointercancel',function(){st.aim=null;});
     C.c.addEventListener('pointermove',function(e){if(st.aim)st.aim.c=toWorld(e);});
     C.c.addEventListener('pointerup',function(){
       if(!st.aim)return;const v=launchV();st.aim=null;
@@ -72,8 +82,8 @@ GAMES.sling=(function(){
         L.pl.forEach(function(pl,i){if(st.assist[i]==null&&Math.hypot(st.p.x-pl.x,st.p.y-pl.y)<pl.r*2.6){st.assist[i]=0;SFX.whoosh();buzz(8);}});
         const tg=L.target;
         if(Math.hypot(st.p.x-tg[0],st.p.y-tg[1])<tg[2]){st.flying=false;st.done=true;SFX.ok();FX.sparkle(...P(tg[0],tg[1]),'#F6C35B',30);setTimeout(win,700);}
-        else if(L.pl.some(function(pl){return Math.hypot(st.p.x-pl.x,st.p.y-pl.y)<pl.r;})||hitWall(st.p)){st.flying=false;st.boom=.6;SFX.drop();buzz(30);setTimeout(reset,700);}
-        else if(st.p.x<-60||st.p.x>1060||st.p.y<-60||st.p.y>680||st.t>14){st.flying=false;SFX.drop();setTimeout(reset,300);}
+        else if(L.pl.some(function(pl){return Math.hypot(st.p.x-pl.x,st.p.y-pl.y)<pl.r;})||hitWall(st.p)){st.boom=.6;SFX.drop();buzz(30);endFlight(700);}
+        else if(st.p.x<-60||st.p.x>1060||st.p.y<-60||st.p.y>680||st.t>14){SFX.drop();endFlight(300);}
       }
       ctx.drawImage(stat,0,0,W,H);
       /* 目标：虚线环在转 */
@@ -87,6 +97,8 @@ GAMES.sling=(function(){
         ctx.strokeStyle='rgba(150,205,255,'+(1-f).toFixed(2)+')';ctx.lineWidth=2;ctx.beginPath();ctx.arc(px,py,pr*(1.3+f*1.6),0,Math.PI*2);ctx.stroke();
         ctx.globalAlpha=1-f;GameArt.glowText(ctx,'借力',px,py-pr*(1.4+f)-12,14,'#9FD3FF',10);ctx.globalAlpha=1;
       });
+      /* 上一趟的轨迹：淡淡的虚线，方便对照着调整 */
+      if(st.ghost&&!st.flying){ctx.strokeStyle='rgba(200,215,240,.22)';ctx.lineWidth=1.2;ctx.setLineDash([4,6]);ctx.beginPath();st.ghost.forEach(function(q,i){if(i%2)return;const a=P(q.x,q.y);i?ctx.lineTo(a[0],a[1]):ctx.moveTo(a[0],a[1]);});ctx.stroke();ctx.setLineDash([]);}
       /* 轨迹：越早的越淡 */
       if(st.trail.length>1){ctx.lineCap='round';const n=st.trail.length;
         for(let i=1;i<n;i+=3){const a=st.trail[i-1],b=st.trail[Math.min(n-1,i+2)],f=i/n;ctx.strokeStyle='rgba('+trailCol+','+(.15+f*.7).toFixed(2)+')';ctx.lineWidth=1+f*1.8;ctx.beginPath();ctx.moveTo(...P(a.x,a.y));ctx.lineTo(...P(b.x,b.y));ctx.stroke();}}
@@ -94,7 +106,10 @@ GAMES.sling=(function(){
       if(st.aim){const v=launchV(),p={x:st.p.x,y:st.p.y},vv={x:v.x,y:v.y},N=Math.round(40*L.pred);
         for(let i=0;i<N;i++){for(let j=0;j<3;j++)step(p,vv,1/120);if(i%2===0)GameArt.soft(ctx,...P(p.x,p.y),4,'246,195,91',1-i/N*.8);}
         const pw=Math.min(1,Math.hypot(st.aim.s.x-st.aim.c.x,st.aim.s.y-st.aim.c.y)/160);
-        ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=1.5;ctx.setLineDash([3,4]);ctx.beginPath();ctx.moveTo(...P(st.p.x,st.p.y));ctx.lineTo(...P(st.aim.c.x,st.aim.c.y));ctx.stroke();ctx.setLineDash([]);
+        /* 皮筋：从探测器往拉的方向画，长度就是力度（不管手指从哪里开始拖） */
+        const pv=launchV(),bx=st.p.x-pv.x/2.6,by=st.p.y-pv.y/2.6;
+        ctx.strokeStyle='rgba(255,255,255,.45)';ctx.lineWidth=1.5;ctx.setLineDash([3,4]);ctx.beginPath();ctx.moveTo(...P(st.p.x,st.p.y));ctx.lineTo(...P(bx,by));ctx.stroke();ctx.setLineDash([]);
+        GameArt.soft(ctx,...P(bx,by),7,'255,255,255',.7);
         ctx.strokeStyle='rgba(246,195,91,.9)';ctx.lineWidth=3;ctx.beginPath();ctx.arc(...P(st.p.x,st.p.y),18,-1.5708,-1.5708+6.283*pw);ctx.stroke();}
       /* 探测器：碟形天线朝后，顺着速度方向 */
       if(st.boom>0){st.boom-=dt;ctx.globalCompositeOperation='lighter';GameArt.soft(ctx,...P(st.p.x,st.p.y),(1-st.boom)*50+10,'255,180,94',st.boom*1.4);ctx.globalCompositeOperation='source-over';}
@@ -107,7 +122,7 @@ GAMES.sling=(function(){
         const q=ctx.createLinearGradient(-9,-7,-5,7);q.addColorStop(0,'#FFFFFF');q.addColorStop(1,'#8E96A6');ctx.fillStyle=q;ctx.beginPath();ctx.ellipse(-6,0,2.4,7.5,0,0,7);ctx.fill();
         ctx.restore();
       }
-      if(!st.flying&&!st.aim&&!st.done)GameArt.caption(ctx,'从探测器往后拖，松手发射',W/2,H-28,{size:12.5});
+      if(!st.flying&&!st.aim&&!st.done&&!st.lock)GameArt.caption(ctx,st.ghost?'虚线是上一次的路线 · 调整角度和力度再试':'按住往后拉，松手发射 · 金色小点是预计路线',W/2,H-28,{size:12.5});
     });
     function win(){
       if(stopF)stopF();
@@ -136,7 +151,7 @@ GAMES.sling=(function(){
   }
   return {
     kind:'side',title:'引力弹弓',sub:'1977 · 旅行者号出发',year:'1977',music:'frontier',
-    how:'从探测器往后拖，像拉弹弓一样，松手发射。<br>经过行星身边会被它的引力拉弯。飞进金色圆圈就算到达。',
+    how:'按住屏幕往后拉，像拉弹弓一样，松手发射；拉得越长，飞得越快。<br>经过行星身边会被它的引力拉弯。飞进金色圆圈就算到达，红色虚线框里是小行星带，碰到就炸。',
     fact:'飞向外行星的探测器燃料有限，常常要绕着行星“借力”加速。这叫引力助推。',
     levels:function(){const r=S.games.sling||{};return LV.map(function(l,i){const open=i<=(r.level||0);return '<button class="btn sm '+(open?'ghost':'')+'" data-lv="'+i+'"'+(open?'':' disabled')+'>'+(i+1)+'. '+l.name+'</button>';}).join('');},
     badge:function(r){return r.level?('第 '+r.level+'/4 关'):'';},

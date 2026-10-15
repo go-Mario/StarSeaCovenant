@@ -107,6 +107,10 @@
 .pn-orb .ic{width:24px;height:24px}
 .pn:active .pn-orb{transform:scale(.93)}
 .pn:hover .pn-orb{transform:scale(1.07);box-shadow:0 0 0 8px rgba(230,179,77,.12),0 12px 30px rgba(0,0,0,.6)}
+/* 文字块：默认竖排居中，年份→标题→说明→状态→仲裁员（用 order 排，竖向时间线时改成左对齐） */
+.pn-tx{display:flex;flex-direction:column;align-items:center;gap:1px;min-width:0}
+.pn-l1{display:contents}
+.pn-y{order:1}.pn-t{order:2}.pn-s{order:3}.pn-tag{order:4}.pn-arb{order:5}
 .pn-y{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.24em;color:var(--gold-2)}
 .pn-t{font-family:var(--f-serif);font-size:15px;font-weight:600;letter-spacing:.08em;line-height:1.35;text-shadow:0 2px 8px #000}
 .pn-s{font-size:11px;line-height:1.45;color:var(--mute-n);text-shadow:0 1px 6px #000}
@@ -125,8 +129,22 @@
 #pvNodes.dense .pn-orb{width:48px;height:48px;margin-bottom:4px}
 #pvNodes.dense .pn-orb .ic{width:20px;height:20px}
 #pvNodes.dense .pn-t{font-size:14px}
+/* 竖向时间线（手机竖屏、节点多） */
+#pvNodes.col .pn{flex-direction:row;align-items:center;gap:12px;width:auto;text-align:left;transform:translate(-24px,-50%);animation-name:pnInCol}
+@keyframes pnInCol{from{opacity:0;transform:translate(-12px,-50%)}to{opacity:1;transform:translate(-24px,-50%)}}
+#pvNodes.col .pn-orb{flex:none;width:48px;height:48px;margin:0}
+#pvNodes.col .pn-orb .ic{width:20px;height:20px}
+#pvNodes.col .pn-tx{align-items:flex-start;gap:3px}
+#pvNodes.col .pn-l1{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+#pvNodes.col .pn-y{font-size:11px;letter-spacing:.2em}
+#pvNodes.col .pn-tag{margin:0;padding:0 6px;font-size:10.5px;line-height:17px}
+#pvNodes.col .pn-arb{margin:0;padding:0 6px;font-size:10px;line-height:17px;letter-spacing:.2em;border:1px solid rgba(159,180,232,.4);border-radius:4px}
+#pvNodes.col .pn-t{font-size:15px;line-height:1.4;letter-spacing:.06em}
+#pvNodes.col .pn-s{display:block;font-size:11px;line-height:1.4}
+@media (max-height:640px){#pvNodes.col .pn-s{display:none}}
+@media (max-height:640px) and (orientation:portrait){.pv-t em{display:none}}
 @media (max-height:520px) and (orientation:landscape){
   #pvHead{top:56px}.pv-t em{display:none}.pv-t b{font-size:18px}
   .pn{width:140px}.pn-s{display:none}.pn-orb{width:46px;height:46px}
 }
-@media (prefers-reduced-motion:reduce){.pn,.wl-cue,.pn.next .pn-orb::after{animation:none}}
+@media (prefers-reduced-motion:reduce){.pn,#pvNodes.col .pn,.wl-cue,.pn.next .pn-orb::after{animation:none}}
