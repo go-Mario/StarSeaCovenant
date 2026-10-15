@@ -22,6 +22,14 @@ const RATE=+(process.argv[2]||4);
   await rec('land theater',async()=>{await p.evaluate(()=>StarMap.land('theater'));},1800);
   await rec('planet view idle',async()=>{},1500);
   await p.evaluate(()=>PlanetView.close());await p.waitForTimeout(800);
+  /* 小游戏：开局时的预渲染不计入，只量游戏进行中的帧 */
+  for(const g of ['lander','orbit','sling','station','sweep','const']){
+    await cdp.send('Emulation.setCPUThrottlingRate',{rate:1});
+    await p.evaluate(g=>{Games.open(g);Games.start();},g);await p.waitForTimeout(600);
+    await cdp.send('Emulation.setCPUThrottlingRate',{rate:RATE});
+    await rec('game '+g,async()=>{},2000);
+    await p.evaluate(()=>Games.close());await p.waitForTimeout(300);
+  }
   await cdp.send('Emulation.setCPUThrottlingRate',{rate:1});
   await p.evaluate(()=>{startChapter('ch1');});await p.waitForTimeout(600);
   await p.evaluate(()=>{const b=document.getElementById('ccGo');if(b)b.click();});await p.waitForTimeout(1500);

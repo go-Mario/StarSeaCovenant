@@ -120,16 +120,17 @@ kbd{display:inline-flex;align-items:center;justify-content:center;min-width:18px
 
 /* 提示条 */
 #toast{position:fixed;left:50%;bottom:calc(26px + var(--safe-b));z-index:360;transform:translate(-50%,16px);opacity:0;pointer-events:none;
-  max-width:min(92vw,520px);padding:10px 18px;border-radius:999px;background:var(--paper);color:var(--ink);font-size:13.5px;font-weight:600;
-  box-shadow:0 10px 30px rgba(0,0,0,.4);transition:opacity .22s,transform .22s var(--snap);text-align:center}
+  max-width:min(92vw,520px);padding:10px 20px;border-radius:999px;background:linear-gradient(180deg,rgba(22,28,48,.96),rgba(10,14,28,.96));color:#F3E6C4;font-size:13.5px;font-weight:600;
+  border:1px solid rgba(200,178,115,.45);box-shadow:0 10px 30px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,236,190,.08);transition:opacity .22s,transform .22s var(--snap);text-align:center}
 #toast.on{opacity:1;transform:translate(-50%,0)}
 
 /* 成就 */
 #achpop{position:fixed;top:calc(14px + var(--safe-t));right:14px;z-index:350;display:flex;gap:12px;align-items:center;padding:10px 16px;border-radius:14px;
-  background:var(--paper);color:var(--ink);box-shadow:0 14px 30px rgba(0,0,0,.4);transform:translateX(130%);visibility:hidden;transition:transform .45s var(--snap),visibility 0s .45s}
+  background:linear-gradient(180deg,rgba(22,28,48,.97),rgba(10,14,28,.97));color:#E8E2D2;border:1px solid rgba(200,178,115,.5);
+  box-shadow:0 14px 30px rgba(0,0,0,.5),0 0 24px rgba(230,179,77,.15);transform:translateX(130%);visibility:hidden;transition:transform .45s var(--snap),visibility 0s .45s}
 #achpop.on{transform:none;visibility:visible;transition:transform .45s var(--snap),visibility 0s}
-#achpop .at{font-family:var(--f-serif);font-weight:700;color:var(--sig)}
-#achpop .ad{font-size:12px;color:var(--ink-3)}
+#achpop .at{font-family:var(--f-serif);font-weight:700;color:#F6D58E;letter-spacing:.06em}
+#achpop .ad{font-size:12px;color:#9A927D}
 
 /* 特效画布 */
 #fx{position:fixed;inset:0;z-index:340;pointer-events:none}

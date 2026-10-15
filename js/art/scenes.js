@@ -145,6 +145,11 @@ const SCENES=(function(){
     s+='<path d="M300 372 L900 372 L1200 600 L0 600 Z" fill="url(#floor_'+P.view+')"/>';
     for(let i=-6;i<=6;i++){const x=600+i*55,bx=600+i*170;s+='<path d="M'+x+' 372 L'+bx+' 600" stroke="'+P.pline+'" stroke-width="1" opacity=".55"/>';}
     s+='<path d="M546 372 L654 372 L760 600 L440 600 Z" fill="'+P.aisle+'" opacity=".85"/><path d="M546 372 L440 600 M654 372 L760 600" stroke="'+P.aisleL+'" stroke-width="1.2" opacity=".6"/>';
+    /* 地面上的窗光和反光 */
+    s+='<defs><radialGradient id="pool_'+P.view+'"><stop offset="0" stop-color="'+P.rim+'" stop-opacity=".22"/><stop offset="1" stop-color="'+P.rim+'" stop-opacity="0"/></radialGradient>'+
+      '<linearGradient id="refl_'+P.view+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+P.rim+'" stop-opacity=".16"/><stop offset="1" stop-color="'+P.rim+'" stop-opacity="0"/></linearGradient></defs>';
+    s+='<path d="M420 372 L780 372 L860 470 L340 470 Z" fill="url(#refl_'+P.view+')"/><ellipse cx="600" cy="430" rx="330" ry="48" fill="url(#pool_'+P.view+')"/>';
+    s+='<path d="M300 372 L900 372" stroke="#000" stroke-width="6" opacity=".25"/>';
     /* 两位边裁（剪影）与首席的高背椅 */
     [[468],[732]].forEach(function(p){
       s+='<path d="M'+(p[0]-34)+' 352 L'+(p[0]-34)+' 262 C'+(p[0]-34)+' 236 '+(p[0]+34)+' 236 '+(p[0]+34)+' 262 L'+(p[0]+34)+' 352 Z" fill="'+P.chair+'"/>';
@@ -238,16 +243,58 @@ const SCENES=(function(){
     s+='<g transform="translate(600 120)"><circle r="2.4" fill="#FFE2B0"/><circle r="12" fill="#FFB45E" opacity=".3" class="twinkle"/></g>';
     return s;
   }
-  /* ---------------- 重演室 ---------------- */
+  /* ---------------- 重演室：纵深的档案库，中间是一座全息投影台 ---------------- */
   function archive(){
-    let s='<rect width="1200" height="600" fill="#05070F"/><ellipse cx="600" cy="330" rx="520" ry="250" fill="url(#nebV)" opacity=".5"/>';
-    for(let row=0;row<5;row++)for(let i=0;i<14;i++){const x=40+i*84,y=60+row*70;if(x>380&&x<820&&row<4)continue;
-      s+='<rect x="'+x+'" y="'+y+'" width="70" height="52" rx="4" fill="#121A30" stroke="#2A3A66" stroke-width="1"/><rect x="'+(x+26)+'" y="'+(y+22)+'" width="18" height="4" rx="2" fill="#5FA9FF" opacity="'+(.3+((i+row)%3)*.2)+'"/>';}
-    s+='<ellipse cx="600" cy="470" rx="300" ry="54" fill="none" stroke="#5FA9FF" stroke-width="2" opacity=".6"/><ellipse cx="600" cy="470" rx="250" ry="42" fill="none" stroke="#D8A84E" stroke-width="1.4" opacity=".5"/>';
-    s+='<path d="M600 470 L600 120" stroke="#5FA9FF" stroke-width="1" opacity=".3"/>';
-    ['1978','2009','2031','2043','2052','2077'].forEach(function(y,i){const a=-2.6+i*.42,x=600+Math.cos(a)*230,yy=250+Math.sin(a)*120;
-      s+='<g transform="translate('+x.toFixed(0)+' '+yy.toFixed(0)+')"><rect x="-34" y="-14" width="68" height="28" rx="14" fill="#0E1730" stroke="#5FA9FF" stroke-width="1" opacity=".9"/><text y="5" text-anchor="middle" font-family="monospace" font-size="13" fill="#BFDBFF">'+y+'</text></g>';});
-    s+='<circle cx="600" cy="300" r="60" fill="none" stroke="#D8A84E" stroke-width="1.4" opacity=".6" class="spin" style="transform-origin:600px 300px"/>';
+    const R=rng(57),vx=600,vy=250;
+    let s='<defs><linearGradient id="arcBg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#04060D"/><stop offset=".55" stop-color="#0A1022"/><stop offset="1" stop-color="#03050A"/></linearGradient>'+
+      '<radialGradient id="arcPool"><stop offset="0" stop-color="#E6B34D" stop-opacity=".38"/><stop offset="1" stop-color="#E6B34D" stop-opacity="0"/></radialGradient>'+
+      '<radialGradient id="arcFar"><stop offset="0" stop-color="#5FA9FF" stop-opacity=".22"/><stop offset="1" stop-color="#5FA9FF" stop-opacity="0"/></radialGradient>'+
+      '<linearGradient id="arcHolo" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#8FC6FF" stop-opacity=".32"/><stop offset="1" stop-color="#8FC6FF" stop-opacity="0"/></linearGradient>'+
+      '<linearGradient id="arcCone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE7B0" stop-opacity=".16"/><stop offset="1" stop-color="#FFE7B0" stop-opacity="0"/></linearGradient></defs>';
+    s+='<rect width="1200" height="600" fill="url(#arcBg)"/><ellipse cx="'+vx+'" cy="'+vy+'" rx="260" ry="160" fill="url(#arcFar)"/>';
+    /* 地面：带反光的深色石材，透视线汇向远处 */
+    s+='<path d="M0 600 L1200 600 L'+(vx+150)+' 372 L'+(vx-150)+' 372 Z" fill="#070A15"/>';
+    for(let i=-8;i<=8;i++){s+='<path d="M'+(vx+i*19)+' 372 L'+(vx+i*150)+' 600" stroke="#1A2342" stroke-width="1" opacity=".7"/>';}
+    for(let k=1;k<7;k++){const y=372+228*(1-1/(1+k*.35))/(1-1/(1+6*.35));s+='<path d="M0 '+y.toFixed(0)+' L1200 '+y.toFixed(0)+'" stroke="#141B34" stroke-width="1" opacity=".55"/>';}
+    /* 两侧档案架：一格一格往远处排，书脊有的亮着 */
+    const unit=function(side,i){
+      const a=1/(1+i*.42),b=1/(1+(i+1)*.42),X=function(sc){return vx+side*560*sc;},T=function(sc){return vy-290*sc;},B=function(sc){return vy+350*sc;};
+      const xa=X(a),xb=X(b),ta=T(a),tb=T(b),ba=B(a),bb=B(b);
+      let u='<path d="M'+xa.toFixed(1)+' '+ta.toFixed(1)+' L'+xb.toFixed(1)+' '+tb.toFixed(1)+' L'+xb.toFixed(1)+' '+bb.toFixed(1)+' L'+xa.toFixed(1)+' '+ba.toFixed(1)+' Z" fill="#0C1226" stroke="#1E2A4E" stroke-width="1.2"/>';
+      for(let r=0;r<6;r++){
+        const f0=.06+r*.15,f1=f0+.12,ya0=ta+(ba-ta)*f0,ya1=ta+(ba-ta)*f1,yb0=tb+(bb-tb)*f0,yb1=tb+(bb-tb)*f1;
+        u+='<path d="M'+xa.toFixed(1)+' '+ya1.toFixed(1)+' L'+xb.toFixed(1)+' '+yb1.toFixed(1)+'" stroke="#2A3760" stroke-width="'+(1.6*a).toFixed(2)+'"/>';
+        const n=Math.round(10+R()*6);
+        for(let k=0;k<n;k++){
+          const u0=k/n+.01,u1=(k+.72)/n,lx0=xa+(xb-xa)*u0,lx1=xa+(xb-xa)*u1,hh=.55+R()*.4;
+          const y0a=ya1-(ya1-ya0)*hh,y0b=ya1,yt0=ya0+(yb0-ya0)*u0,yt1=ya0+(yb0-ya0)*u1,yb_0=ya1+(yb1-ya1)*u0,yb_1=ya1+(yb1-ya1)*u1;
+          const top0=yb_0-(yb_0-yt0)*hh,top1=yb_1-(yb_1-yt1)*hh;
+          const glow=R(),col=glow>.9?'#E6B34D':glow>.82?'#5FA9FF':glow>.5?'#2A355A':'#1B2442';
+          u+='<path d="M'+lx0.toFixed(1)+' '+yb_0.toFixed(1)+' L'+lx0.toFixed(1)+' '+top0.toFixed(1)+' L'+lx1.toFixed(1)+' '+top1.toFixed(1)+' L'+lx1.toFixed(1)+' '+yb_1.toFixed(1)+' Z" fill="'+col+'"'+(glow>.82?' opacity="'+(.55+R()*.4).toFixed(2)+'"':'')+'/>';
+        }
+      }
+      return u;
+    };
+    for(let i=7;i>=0;i--){s+=unit(-1,i)+unit(1,i);}
+    /* 顶棚的灯带 */
+    for(let k=0;k<6;k++){const sc=1/(1+k*.6);s+='<path d="M'+(vx-480*sc).toFixed(0)+' '+(vy-300*sc).toFixed(0)+' L'+(vx+480*sc).toFixed(0)+' '+(vy-300*sc).toFixed(0)+'" stroke="#E6B34D" stroke-width="'+(2.2*sc).toFixed(2)+'" opacity="'+(.18+.1*sc).toFixed(2)+'"/>';}
+    /* 投影台与光 */
+    s+='<path d="M'+(vx-140)+' 0 L'+(vx+140)+' 0 L'+(vx+230)+' 470 L'+(vx-230)+' 470 Z" fill="url(#arcCone)"/>';
+    s+='<ellipse cx="'+vx+'" cy="470" rx="320" ry="60" fill="url(#arcPool)"/>';
+    s+='<path d="M'+(vx-120)+' 452 L'+(vx+120)+' 452 L'+(vx+100)+' 482 L'+(vx-100)+' 482 Z" fill="#141B30" stroke="#C8B273" stroke-width="1.2" stroke-opacity=".6"/>';
+    s+='<ellipse cx="'+vx+'" cy="452" rx="120" ry="16" fill="#1C2440" stroke="#E6B34D" stroke-width="1.4" stroke-opacity=".8"/>';
+    s+='<ellipse cx="'+vx+'" cy="452" rx="92" ry="11" fill="none" stroke="#8FC6FF" stroke-width="1.2" opacity=".7" stroke-dasharray="6 7"/>';
+    s+='<path d="M'+(vx-100)+' 452 L'+(vx-40)+' 150 L'+(vx+40)+' 150 L'+(vx+100)+' 452 Z" fill="url(#arcHolo)"/>';
+    /* 全息的小星系：中央一颗金色的星，几圈轨道 */
+    s+='<g transform="translate('+vx+' 278)">';
+    [[150,34,.5],[112,25,.6],[76,17,.7]].forEach(function(o,i){s+='<ellipse rx="'+o[0]+'" ry="'+o[1]+'" fill="none" stroke="'+(i===0?'#E6B34D':'#8FC6FF')+'" stroke-width="1.1" opacity="'+o[2]+'" stroke-dasharray="'+(i===0?'3 6':'2 5')+'"/>';});
+    s+='<circle r="30" fill="#E6B34D" opacity=".12"/><circle r="11" fill="#FFE7B0" opacity=".9"/><circle r="18" fill="none" stroke="#FFE7B0" stroke-width=".8" opacity=".5"/>';
+    [[150,34,.7,'#9FD8FF'],[112,25,2.4,'#E8A76A'],[76,17,4.1,'#C9D6EE']].forEach(function(o){s+='<circle cx="'+(Math.cos(o[2])*o[0]).toFixed(1)+'" cy="'+(Math.sin(o[2])*o[1]).toFixed(1)+'" r="4.2" fill="'+o[3]+'"/>';});
+    s+='</g>';
+    /* 一圈年份：六个案子 */
+    ['1978','2009','2031','2043','2052','2077'].forEach(function(y,i){const a=-2.75+i*.5,x=vx+Math.cos(a)*250,yy=286+Math.sin(a)*118;
+      s+='<g transform="translate('+x.toFixed(0)+' '+yy.toFixed(0)+')"><rect x="-36" y="-14" width="72" height="28" rx="3" fill="#0B1124" stroke="#C8B273" stroke-width="1" stroke-opacity=".7"/>'+
+        '<path d="M-36 -14 L-28 -14 M28 14 L36 14" stroke="#E6B34D" stroke-width="2"/><text y="5" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="13" letter-spacing="2" fill="#F3E6C4">'+y+'</text></g>';});
     return s;
   }
   function register(){
