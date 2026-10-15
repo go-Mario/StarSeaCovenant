@@ -56,8 +56,10 @@ async function doPostAward(){
     return;
   }
   if(S.tips.indexOf('postAward')<0)await showTip('postAward');
+  const again=!!S.postSeen;S.postTried=S.postTried||{};
   await say(CUR.bench,'本裁决为终局裁决，双方不得就实体问题上诉。如认为存在法定情形，可在期限内提出以下申请。');
-  await say('chen','你可以站在输的那一方试试看，每条路能走多远。');
+  if(!again)await say('chen','你可以站在输的那一方试试看，每条路能走多远。');
+  S.postSeen=true;save();
   const used={};
   while(TH.running){
     const i=await choose('裁决之后','从收到裁决之日起算期限。',POST_OPTS,function(o){return '<b>'+o.t+'</b>'+(used[o.k]?' <span class="chip">已试过</span>':'')+'<div class="cevd">'+o.d+(o.law?'　·　'+o.law:'')+'</div>';});
@@ -66,10 +68,14 @@ async function doPostAward(){
     if(used[o.k]){await say(CUR.bench,'这项申请已经处理过了。');continue;}
     used[o.k]=true;
     if(o.k==='interp'){await say(CUR.bench,CUR.interp);await say('chen','他会解释给你听，但一个字都不会改。');}
+    else if(S.postTried[o.k]){await say(CUR.bench,'理由和上一案一样：这项申请不符合法定情形，本庭不予受理。');}/* 前几章试过的路，不再把同一段话念一遍 */
     else{await say(CUR.bench,o.rej);if(o.k==='annul')await say('chen','可以不服，但没有第二次开庭。');}
+    S.postTried[o.k]=true;save();
   }
 }
 
+/* 评定的高低，用来保留最好的一次 */
+function gradeRank(g){if(!g)return -1;const b=String(g).replace(/（.*）/,''),L=['难以服众','险胜','勉强过关','有惊无险','基本成立','和解结案','干净利落','说理扎实','无懈可击','堪称范本'];let k=L.indexOf(b);if(k<0)k=0;return k*2-(/（/.test(g)?1:0);}
 /* 章节收尾：评定、奖励、存档、现实原型 */
 async function finishChapter(d){
   d=d||{};
@@ -81,7 +87,7 @@ async function finishChapter(d){
   /* 评定 */
   let grade;
   if(settled)grade='和解结案';
-  else if(C.arbiter){const a=TH.award,r=a.pts/a.max;grade=(r>=1&&!a.ultra)?'堪称范本':r>=.75?'说理扎实':r>=.5?'基本成立':r>=.25?'勉强过关':'难以服众';if(a.ultra)grade+=C.advisory?'（越题部分已删去）':'（部分被撤销）';}
+  else if(C.arbiter){const a=TH.award,r=a.pts/a.max-(TH.impartial<=2?.25:0);/* 发问时失了公正，评定降一档 */grade=(r>=1&&!a.ultra)?'堪称范本':r>=.75?'说理扎实':r>=.5?'基本成立':r>=.25?'勉强过关':'难以服众';if(a.ultra)grade+=C.advisory?'（越题部分已删去）':'（部分被撤销）';}
   else{const miss=TH.picks.filter(function(p){return !p.ok;}).length;grade=miss===0&&TH.flawless?'无懈可击':miss===0?'干净利落':miss<=2?'有惊无险':'险胜';}
   await showVerdictDoc({settled:settled});
   if(!settled&&!C.arbiter)await doPostAward();
@@ -90,15 +96,19 @@ async function finishChapter(d){
   const prev=S.ch[id]||{};
   let dust=first?60:10,rep=0;
   if(first){rep=C.rep||5;if(grade==='无懈可击'||grade==='堪称范本'){rep+=1;dust+=20;}}
-  S.ch[id]={done:true,grade:grade,ending:TH.ending,flawless:TH.flawless,picks:TH.picks.slice(),evs:TH.evs.slice(),facts:TH.facts.slice(),date:Date.now(),best:prev.best||grade};
-  if(C.law)unlockLaw(C.law,true);
-  let newPrec=null;
-  if(!settled&&C.prec&&S.precs.indexOf(C.prec)<0){S.precs.push(C.prec);newPrec=PREC_BY[C.prec];}
+  /* 重玩不会把档案里的评定改差：存最好的那次 */
+  const best=gradeRank(grade)>=gradeRank(prev.best||prev.grade)?grade:(prev.best||prev.grade);
+  S.ch[id]={done:true,grade:grade,ending:TH.ending,flawless:TH.flawless,picks:TH.picks.slice(),evs:TH.evs.slice(),facts:TH.facts.slice(),date:Date.now(),best:best};
+  const newLaw=unlockLaw(C.unlock||C.law,true)?(C.unlock||C.law):null;
+  let newPrec=null,precNote='';
+  /* 仲裁员章节：只有关键争点判得扎实，才写入先例 */
+  const precOk=!C.arbiter||!TH.award||(TH.award.res[C.precIssue||0]&&TH.award.res[C.precIssue||0].q.k==='solid');
+  if(!settled&&C.prec&&S.precs.indexOf(C.prec)<0){if(precOk){S.precs.push(C.prec);newPrec=PREC_BY[C.prec];}else precNote='这一份裁决的关键争点说理不够扎实，没有写入先例。重来一次，可以争取写进去。';}
   S.standing=TH.standing;S.rep+=rep;S.dust+=dust;S.focus=clamp(S.focus-20,0,100);
   (C.hist||[]).forEach(function(h){SAVE.seeHist(h);});
   save();checkAchs();
   if(id==='ch6'){await Ending.play();}
-  await chapterResult(C,grade,{dust:dust,rep:rep,first:first,newPrec:newPrec,settled:settled});
+  await chapterResult(C,grade,{dust:dust,rep:rep,first:first,newPrec:newPrec,settled:settled,newLaw:newLaw,precNote:precNote});
   endTheater(true);
 }
 function chapterResult(C,grade,r){
@@ -109,10 +119,11 @@ function chapterResult(C,grade,r){
     card.innerHTML='<div class="cr-in dz">'+
       '<div class="cr-k">'+C.num+' · '+C.year+'</div><div class="cr-t">'+C.title+'</div>'+
       '<div class="cr-grade"><span class="stamp">'+grade+'</span></div>'+
-      '<div class="cr-rw">'+(r.rep?'<span class="chip">声望 +'+r.rep+'</span>':'')+'<span class="chip amber">星尘 +'+r.dust+'</span><span class="chip">精力 -20</span>'+(r.first&&C.law?'<span class="chip ok">法典：'+LAW_BY[C.law].name+'</span>':'')+'</div>'+
-      (r.newPrec?'<div class="cr-prec"><b>写入先例 · '+r.newPrec.name+'</b>'+r.newPrec.rule+'</div>':(r.settled?'<div class="cr-prec muted">和解结案，不形成先例。</div>':''))+
+      '<div class="cr-rw">'+(r.rep?'<span class="chip">声望 +'+r.rep+'</span>':'')+'<span class="chip amber">星尘 +'+r.dust+'</span><span class="chip">精力 -20</span>'+(r.newLaw&&LAW_BY[r.newLaw]?'<span class="chip ok">法典新增：'+LAW_BY[r.newLaw].name+'</span>':'')+'</div>'+
+      (r.newPrec?'<div class="cr-prec"><b>写入先例 · '+r.newPrec.name+'</b>'+r.newPrec.rule+'</div>':(r.settled?'<div class="cr-prec muted">和解结案，不形成先例。</div>':(r.precNote?'<div class="cr-prec muted">'+r.precNote+'</div>':'')))+
       '<hr><div class="cr-real"><div class="cr-rk">现实原型</div>'+fill(C.real)+'</div>'+
       (nextId&&r.first?'<div class="cr-next">星图上，<b>'+CHAPTERS[nextId].year+' · '+CHAPTERS[nextId].title+'</b> 已经亮起。</div>':'')+
+      (!nextId&&r.first&&C.id==='ch6'?'<div class="cr-next">开庭剧场的最后一站，<b>尾声 · 回信台</b> 已经开放：这一次，写你自己想说的话。</div>':'')+
       '<button class="btn block dz-go" id="crOk">回到星图</button><i class="dz-c tl"></i><i class="dz-c tr"></i><i class="dz-c bl"></i><i class="dz-c br"></i></div>';
     byId('crOk').onclick=function(){SFX.tap();card.classList.remove('on');res();};
   });

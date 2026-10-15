@@ -134,7 +134,12 @@
 .cbtn.blue{--cb:#5FA9FF}.cbtn.gold{--cb:#E6B34D}.cbtn.jade{--cb:#4ECF8D}
 .cbtn:hover{border-color:rgba(230,179,77,.7)}
 .cbtn:active{transform:translateY(2px)}
-@media (orientation:landscape) and (max-height:480px){.cbtn{min-height:44px}#crossbar{bottom:calc(var(--dlgH) + 8px)}#theater:has(#crossbar.on) #dlgText{height:auto}}
+/* 手机横放：三个按钮收到对白框右侧，不挡法庭画面；对白文字让出右边 */
+@media (orientation:landscape) and (max-height:480px){
+  #crossbar{left:auto;right:calc(12px + env(safe-area-inset-right,0px));bottom:calc(12px + var(--safe-b));width:min(44%,400px);max-width:none;margin:0;padding:0;gap:6px}
+  .cbtn{min-height:44px;letter-spacing:.1em;font-size:14px}.cbtn small{display:none}.cbtn kbd{display:none}
+  #theater:has(#crossbar.on) #dlgText{height:calc(var(--dlgH) - 60px);margin-right:calc(min(44%,400px) + 8px)}
+}
 
 /* 选项 */
 #choices{position:absolute;inset:0;z-index:40;display:none;flex-direction:column;align-items:center;justify-content:center;padding:70px 16px 24px;
@@ -184,6 +189,26 @@
 .hotspot .hit{fill:transparent;pointer-events:all}
 .hotspot.blue .ring{stroke:#5FA9FF}.hotspot.blue .dot{fill:#5FA9FF;filter:drop-shadow(0 0 6px rgba(95,169,255,.9))}
 @keyframes hot{from{transform:scale(.6);opacity:.9}to{transform:scale(1.6);opacity:0}}
+/* 现场搜查：找标记时对白框收起，画面全露出来；画面比屏幕宽时可以拖，边上的箭头标出那边还有几处 */
+#dlg{transition:opacity .22s var(--ease),transform .22s var(--ease)}
+#theater.th-search #thCam{transform:none!important}
+#theater.th-search #thScene{touch-action:none}
+#theater.th-pan #thScene{cursor:grab}#theater.th-drag #thScene{cursor:grabbing}
+#theater.th-look #dlg{opacity:0;transform:translateY(26px);pointer-events:none}
+#srBar{position:absolute;left:0;right:0;bottom:0;height:calc(var(--dlgH) * .42);z-index:14;display:none;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  padding:0 16px var(--safe-b);text-align:center;color:#D9D1BC;font-size:14px;letter-spacing:.1em;pointer-events:none;
+  background:linear-gradient(rgba(5,7,12,.2),rgba(5,7,12,.9));border-top:1px solid rgba(200,178,115,.28)}
+#srBar small{font-size:12px;color:#8F98AE;letter-spacing:.06em}
+#theater.th-look #srBar{display:flex;animation:srIn .3s var(--ease)}
+@keyframes srIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.sr-edge{position:absolute;z-index:12;display:none;align-items:center;gap:4px;height:44px;min-width:52px;margin-top:-22px;padding:0 12px;border-radius:22px;
+  background:rgba(10,16,30,.82);border:1px solid rgba(95,169,255,.6);color:#CFE4FF;font:600 15px/1 var(--f-sans);cursor:pointer;
+  box-shadow:0 0 0 4px rgba(95,169,255,.12),0 6px 16px rgba(0,0,0,.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.sr-edge i{font-style:normal;font-size:22px;line-height:1;margin-top:-2px}
+.sr-edge.l{left:calc(8px + env(safe-area-inset-left,0px))}.sr-edge.r{right:calc(8px + env(safe-area-inset-right,0px))}
+.sr-edge.l i{animation:srL 1.4s ease-in-out infinite}.sr-edge.r i{animation:srR 1.4s ease-in-out infinite}
+@keyframes srL{50%{transform:translateX(-3px)}}@keyframes srR{50%{transform:translateX(3px)}}
+#theater.th-look .sr-edge.on{display:inline-flex}
 #inspectDone{position:absolute;right:14px;top:calc(60px + var(--safe-t));z-index:25;display:none}
 #inspectDone.on{display:inline-flex}
 

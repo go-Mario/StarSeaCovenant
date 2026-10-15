@@ -29,7 +29,7 @@ const Panels=(function(){
         '<button class="btn sm ghost" id="meEdit">修改形象</button></div></div>';
       b+='<div class="stat-row"><div><b>'+done+'/6</b><span>章节</span></div><div><b>'+S.precs.length+'</b><span>先例</span></div><div><b>'+S.laws.length+'/'+LAWS.length+'</b><span>法典</span></div><div><b>'+S.hist.length+'</b><span>史实卡</span></div></div>';
       b+='<h3>结案记录</h3>';
-      b+=CH_ORDER.map(function(id){const C=CHAPTERS[id],r=S.ch[id];return '<div class="row-item"><span class="ri-y">'+C.year+'</span><span class="ri-t">'+C.title+'</span><span class="ri-r">'+(r?'<span class="stamp sm">'+esc(r.grade)+'</span>':'<span class="muted small">未开庭</span>')+'</span></div>';}).join('');
+      b+=CH_ORDER.map(function(id){const C=CHAPTERS[id],r=S.ch[id];return '<div class="row-item"><span class="ri-y">'+C.year+'</span><span class="ri-t">'+C.title+'</span><span class="ri-r">'+(r?'<span class="stamp sm">'+esc(r.best||r.grade)+'</span>':'<span class="muted small">未开庭</span>')+'</span></div>';}).join('');
       const tags=(S.moralLog||[]).map(function(m){return '<span class="chip">'+esc(m.tag)+'</span>';}).join(' ');
       b+='<h3>你表过的态</h3>'+(tags||'<div class="muted small">还没有。每章结束前，带教律师会问你一个没有标准答案的问题。</div>');
       const top=leanTop();
@@ -38,6 +38,7 @@ const Panels=(function(){
       if(sats.length)b+='<h3>我的卫星</h3>'+sats.map(function(s){return '<div class="row-item"><span class="ri-t">「'+esc(s.name)+'」'+s.orb+' · '+s.mis+'</span><span class="ri-r">'+(s.reg?'<span class="chip ok">已登记</span>':'<span class="chip red">未登记</span>')+'</span></div>';}).join('');
       if(S.games.sling&&S.games.sling.record)b+='<h3>我的金唱片</h3><div class="small">'+S.games.sling.record.map(esc).join(' · ')+'</div>';
       if(S.reply)b+='<h3>人类的第一句回答</h3><div class="serif">“'+esc(S.reply)+'”</div>';
+      if(S.pen&&(S.pen.letters.length||S.pen.arts.length))b+='<h3>亲笔</h3><div class="small">写过 '+S.pen.letters.length+' 封信，公约起草了 '+S.pen.arts.length+' 条。都在开庭剧场的“回信台”里。</div>';
     }else if(tab==='laws'){
       b+='<div class="muted small">办一个案子，记一条法。没收进法典的条文，庭上也能引用，只是你只记得个大概。</div>';
       b+=LAWS.map(function(l){const on=S.laws.indexOf(l.id)>=0;return '<div class="law-card'+(on?'':' off')+'"><div class="lc-h"><b>'+l.name+'</b><span>'+l.src+'</span></div><div class="lc-t">'+(on?l.text:'还没收进法典。')+'</div>'+(on?'<div class="lc-s">管什么：'+l.scope+'</div>':'')+'</div>';}).join('');
@@ -112,7 +113,9 @@ const Panels=(function(){
       const p=BENCH_BY[benchCur],s=S.judge[p.id];
       b+='<div class="bench-brief">'+fill(p.brief)+'</div>';
       const pick=s?s.ch:null;
-      b+='<h3>你的裁决</h3>'+p.opts.map(function(o,i){return '<button class="bench-opt'+(pick===i?' on':'')+'" data-opt="'+i+'"><b>'+String.fromCharCode(65+i)+'</b>'+fill(o)+'</button>';}).join('');
+      /* 选项顺序按案子固定打乱：每次进来顺序一样，但“现行法”那一项不总在同一个位置 */
+      const R=rng(p.id.charCodeAt(1)*131+7),ord=p.opts.map(function(_,i){return i;});for(let i=ord.length-1;i>0;i--){const j=Math.floor(R()*(i+1)),t=ord[i];ord[i]=ord[j];ord[j]=t;}
+      b+='<h3>你的裁决</h3>'+ord.map(function(i,pos){const o=p.opts[i];return '<button class="bench-opt'+(pick===i?' on':'')+'" data-opt="'+i+'"><b>'+String.fromCharCode(65+pos)+'</b>'+fill(o)+'</button>';}).join('');
       if(pick!=null){
         const L=LEAN[p.lean[pick]];
         b+='<div class="bench-res"><div><span class="chip" style="color:'+L.c+'">'+L.n+'</span>'+L.d+'</div><div class="br-after"><b>此后</b>'+p.after[pick]+'</div>'+
@@ -147,7 +150,9 @@ const Panels=(function(){
     const dk=todayKey();
     if(practice)qz={practice:true,ids:quizSet((Date.now()%100000)+11),i:0,res:[]};
     else{const pg=S.daily.prog;qz=(pg&&pg.d===dk)?{practice:false,ids:pg.ids,i:pg.res.length,res:pg.res.slice()}:{practice:false,ids:quizSet(dayHash()*7+13),i:0,res:[]};}
-    SFX.page();qz.t0=performance.now();quiz();
+    SFX.page();qz.t0=performance.now();
+    if(qz.i>=QN){qz.i=QN-1;quizFinish();return;}/* 五句都答完了、只是没点“看结果”就退出：直接结算 */
+    quiz();
   }
   function quizAnswer(v){
     if(!qz||qz.res[qz.i]!=null)return;stopQuizTimer();
@@ -186,7 +191,7 @@ const Panels=(function(){
         b+=(S.daily.ids?'<h3>今天的五句</h3>'+quizRows(S.daily.ids,S.daily.res||[]):'')+'<div class="muted small">明天换一组新的。想多练几句，可以再来一组，不计奖励。</div><button class="btn ghost block" id="qzPrac">再练一组</button>';
       }else{
         const pg=S.daily.prog,mid=pg&&pg.d===dk&&pg.res.length;
-        b+='<button class="btn red block" id="qzGo">'+(mid?'接着答（第 '+(pg.res.length+1)+' 句）':'开始')+'</button><div class="muted small">每答对一句得 2 星尘，全对再加 4；连续三天有成就。</div>';
+        b+='<button class="btn red block" id="qzGo">'+(mid?(pg.res.length>=QN?'看结果':'接着答（第 '+(pg.res.length+1)+' 句）'):'开始')+'</button><div class="muted small">每答对一句得 2 星尘，全对再加 4；连续三天有成就。</div>';
       }
       b+='<div class="qz-note">和“五个小案子”不同：小案子没有标准答案，只记你的裁判偏向；这里每一句都有确定的答案，考的是条文本身。</div></div>';
       shell('每日速判',b);

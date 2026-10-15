@@ -74,6 +74,8 @@ const ACHS=[
  {id:'half',name:'走过半个世纪',desc:'完成前三章',cond:function(){return SAVE.chDone('ch3');}},
  {id:'chair',name:'坐上那把椅子',desc:'第一次以仲裁员身份作出裁决',cond:function(){return SAVE.chDone('ch5');}},
  {id:'reply',name:'替人类回信',desc:'完成第六章',cond:function(){return SAVE.chDone('ch6');}},
+ {id:'pen',name:'亲笔',desc:'在回信台写下第一封自己的信',cond:function(){return !!(S.pen&&S.pen.letters.length);}},
+ {id:'covenant',name:'立约的人',desc:'在你的星海公约里写满五条',cond:function(){return !!(S.pen&&S.pen.arts.length>=5);}},
  {id:'clean',name:'一步不错',desc:'某一章没有任何失着',cond:function(){return Object.keys(S.ch).some(function(k){return S.ch[k].flawless;});}},
  {id:'settle',name:'各退一步',desc:'用和解结束一个案子',cond:function(){return Object.keys(S.ch).some(function(k){return S.ch[k].ending==='settle';});}},
  {id:'sat',name:'第一颗卫星',desc:'在卫星工坊发射并登记一颗卫星',cond:function(){return !!(S.games.sat&&S.games.sat.launched);}},

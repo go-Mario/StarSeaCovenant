@@ -47,7 +47,7 @@ const FAR=[
 function nextCh(){return CH_ORDER.find(function(id){return !SAVE.chDone(id);});}
 function chState(id){if(SAVE.chDone(id))return 'done';if(chapterUnlocked(id))return 'open';return 'locked';}
 function worldHint(w){
-  if(w.id==='theater'){const nx=nextCh();return nx?('下一案 · '+CHAPTERS[nx].year+' '+CHAPTERS[nx].title):'六案已结 · 可以重开';}
+  if(w.id==='theater'){const nx=nextCh();return nx?('下一案 · '+CHAPTERS[nx].year+' '+CHAPTERS[nx].title):(Pen.count()?'六案已结 · 回信台':'六案已结 · 尾声：回信台');}
   if(w.items){const n=w.items.filter(function(id){return S.games[id]&&S.games[id].plays;}).length;return n+'/'+w.items.length+(w.id==='relax'?' · 恢复精力':' · 已玩过');}
   if(w.id==='bench'){return '已裁 '+Object.keys(S.judge||{}).length+'/5';}
   return '';
@@ -676,8 +676,14 @@ function spaced(t){return String(t).split('').join(' ');}
 const PlanetView=(function(){
   let cur='',focusId='',cv,g,W=0,H=0,D=1;
   function nodesOf(w){
-    if(w.id==='theater')return CH_ORDER.map(function(id){const C=CHAPTERS[id],st=chState(id),r=S.ch[id];
-      return {k:'ch',id:id,ic:'ic-scale',y:C.year,t:C.num+' · '+C.title,s:C.sub,st:st,tag:st==='done'?r.grade:(st==='locked'?'未开启':''),arb:!!C.arbiter};});
+    if(w.id==='theater'){
+      const ns=CH_ORDER.map(function(id){const C=CHAPTERS[id],st=chState(id),r=S.ch[id];
+        return {k:'ch',id:id,ic:'ic-scale',y:C.year,t:C.num+' · '+C.title,s:C.sub,st:st,tag:st==='done'?(r.best||r.grade):(st==='locked'?'未开启':''),arb:!!C.arbiter};});
+      /* 主线之后的尾声：自由书写，第六章结束才开放 */
+      const on=Pen.unlocked(),pc=S.pen?(S.pen.letters.length+S.pen.arts.length):0;
+      ns.push({k:'pen',id:'pen',ic:'ic-pen',y:'尾声',t:'回信台',s:'写下你自己想说的话',st:on?(pc?'done':'open'):'locked',tag:on?(pc?pc+' 篇':'自由书写'):'第六章后开放'});
+      return ns;
+    }
     if(w.items)return w.items.map(function(id){const G=GAMES[id],r=S.games[id];
       return {k:'game',id:id,ic:GAME_IC[id]||'ic-star',y:G.year||'',t:G.title,s:G.sub||'',st:r&&r.plays?'done':'open',tag:(r&&G.badge)?G.badge(r):''};});
     if(w.id==='bench'){const n=Object.keys(S.judge||{}).length,dd=S.daily&&S.daily.last===todayKey();return [
@@ -720,10 +726,12 @@ const PlanetView=(function(){
     byId('pvBack').onclick=function(){SFX.tap();close();};
     const nodes=nodesOf(w),col=colMode(nodes.length);
     byId('pvNodes').classList.toggle('col',col);byId('pvNodes').classList.toggle('dense',!col&&W/H<.95&&nodes.length>=5);
+    /* 横屏一排放七个点（开庭剧场加了尾声）时，字收小一点，免得相邻两站的字挤在一起 */
+    byId('pvNodes').classList.toggle('tight',!col&&W/H>=.95&&nodes.length>1&&W*.74/(nodes.length-1)<125);
     const pts=layout(nodes.length),nx=nextCh();
     let h='',path='';
     nodes.forEach(function(n,i){
-      const p=pts[i],isNext=(n.k==='ch'&&n.id===nx)||(n.k==='game'&&n.st==='open'&&!nodes.slice(0,i).some(function(m){return m.st==='open';}));
+      const p=pts[i],isNext=(n.k==='ch'&&n.id===nx)||(n.k==='pen'&&n.st==='open')||(n.k==='game'&&n.st==='open'&&!nodes.slice(0,i).some(function(m){return m.st==='open';}));
       h+='<button class="pn k-'+n.k+' st-'+n.st+(isNext?' next':'')+(n.id===focusId?' focus':'')+'" data-k="'+n.k+'" data-id="'+n.id+'" style="left:'+p.x.toFixed(0)+'px;top:'+p.y.toFixed(0)+'px;'+(col?'max-width:'+Math.round(W-p.x-18)+'px;':'')+'animation-delay:'+(.12+i*.07).toFixed(2)+'s">'+
         '<span class="pn-orb">'+icon(n.st==='locked'?'ic-lock':n.ic)+'</span><span class="pn-tx">'+
         '<span class="pn-l1">'+(n.y?'<span class="pn-y">'+n.y+'</span>':'')+(n.tag?'<span class="pn-tag">'+esc(n.tag)+'</span>':'')+(n.arb?'<span class="pn-arb">仲裁员</span>':'')+'</span>'+
@@ -742,6 +750,7 @@ const PlanetView=(function(){
     if(k==='game'){Games.open(id);return;}
     if(k==='panel'){Panels.open(id);return;}
     if(k==='arch'){Panels.open('archive',id);return;}
+    if(k==='pen'){Pen.open();return;}
   }
   /* 背景：星空画一次；星球弧面单独一块画布，降落时用 CSS 从下往上升起（不占每帧绘制） */
   function paint(){
@@ -826,7 +835,7 @@ const Hub=(function(){
         if(!S.profile.hubSeen){S.profile.hubSeen=true;save();}
       }else StarMap.cue(false);
     },
-    goNext(){const nx=nextCh();StarMap.land('theater',nx||'ch6');},
+    goNext(){const nx=nextCh();StarMap.land('theater',nx||'pen');},
     musicHere(){return PlanetView.isOpen()?WORLD_BY[PlanetView.current()].music:'deep';},
     onScroll(){},scrollToEra(){},
     current(){return PlanetView.current()||'map';}

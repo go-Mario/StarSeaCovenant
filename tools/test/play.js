@@ -68,7 +68,7 @@ const AP_SRC=function(MODE){
       let i=it.findIndex(function(x){return x.id===id;});if(i<0)i=0;
       $$('#shelfList .sh-item')[i].click();AP.wantEv=null;return 'shelf';
     }
-    if(vis('choices')&&$$('#choices .choice').length){const i=pickChoice();$$('#choices .choice')[i].click();return 'choice';}
+    if(vis('choices')&&$$('#choices .choice').length){const i=pickChoice();(document.querySelector('#choices .choice[data-i="'+i+'"]')||$$('#choices .choice')[i]).click();return 'choice';}
     if(vis('board')){if(peek($('#board [data-a]')?'award':'hearing'))return 'peek:'+($('#board [data-a]')?'award':'hearing');
       const qs=$$('#board .bd-q:not([disabled])');
       if(qs.length||$('#board [data-q="__end"]')){

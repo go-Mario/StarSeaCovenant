@@ -18,14 +18,14 @@ let scriptGen=0;
 const TIPS={
   choice:{t:'当庭表态',d:'对方说完，轮到你回应。选错不会立刻输，但会掉一格<b>气势</b>。气势掉光，就是“举证不能”，这一章要重来。',ic:'ic-chat'},
   invest:{t:'现场取证',d:'在画面上找发光的点，点一下收进证物袋。<b>带“关键”标记的证物</b>收齐才能回庭。多拿几件也没坏处，庭上用不用由你。',ic:'ic-search'},
-  cross:{t:'质证',d:'证人会一句一句地说。每一句你可以：<br><b>追问</b>：让他多说一点，有时会说漏嘴；<br><b>出示证据</b>：拿出和这句话矛盾的证物，当场戳穿。<br>拿错证物会掉气势。证词说完还没找到破绽，会再听一遍。',ic:'ic-file'},
+  cross:{t:'质证',d:'证人会一句一句地说。每一句你可以：<br><b>追问</b>：让他多说一点，有时会说漏嘴；<br><b>出示证据</b>：拿出和这句话矛盾的证物，当场戳穿；<br>觉得这句没问题，<b>点一下对白框</b>听下一句。<br>拿错证物会掉气势。证词说完还没找到破绽，会再听一遍。',ic:'ic-file'},
   law:{t:'引用法条',d:'质证中多了一个按钮：<b>引律</b>。选中本案真正适用的那一条，能把争论拉回正确的轨道，气势 +1。选错了，对方会当场指出你引错了。',ic:'ic-law'},
   chain:{t:'组证据链',d:'一个主张要满足几个<b>构成要件</b>，每个要件配一件证据。全部选完一起提交，仲裁庭只告诉你“几环站得住”，不告诉你是哪几环。',ic:'ic-link'},
   postAward:{t:'裁决之后',d:'仲裁一裁终局，不能上诉。不服的一方只能申请解释、更正笔误、补充漏裁，或者以程序问题申请撤销。下面你可以亲手试一试这几条路。',ic:'ic-gavel'},
   cost:{t:'人望',d:'有些问法能赢得更快，但会让人难堪。屏幕左上角的绿色圆点是<b>人望</b>。人望高，证人愿意多说；人望太低，证人会拒绝回答。选项只标出对气势的影响，人望怎么变，你得自己掂量。',ic:'ic-heart'},
   precCite:{t:'你说过的话',d:'重演室会读取你在前几章表过的态。对方可能拿你的原话来堵你。好的应对通常是<b>区分</b>：说清楚两个案子哪里不一样。',ic:'ic-book'},
   settle:{t:'和解',d:'对方可能提出和解。接受，稳妥，但仲裁庭不会就法律问题表态，也不会留下先例；拒绝，风险更高，但只有裁决能把规则说清楚。两条路都能走完这一章。',ic:'ic-hand'},
-  lean:{t:'你的裁判记录',d:'你在“裁判练习”里落过的槌是公开的。对方会研究你的偏向，当庭拿来说事。',ic:'ic-scale'},
+  lean:{t:'你的过往记录',d:'你在前几章的表态、在“裁判练习”里落过的槌，都是公开的。对方会研究你的偏向，当庭拿来说事。',ic:'ic-scale'},
   hearing:{t:'你来主持',d:'这一次你坐在中间。双方说完开场，你有<b>有限的提问次数</b>。问到点子上，事实会被“记录在案”；问得不当（诱导、跑题），会被提出异议，也会损害你的公正形象。',ic:'ic-gavel'},
   inspect:{t:'现场勘验',d:'仲裁庭到现场看一看。点画面上的标记，记下你看到的东西。勘验不消耗提问次数。',ic:'ic-search'},
   award:{t:'起草裁决',d:'每个争议点选一个结论。结论要有<b>记录在案的事实</b>撑着才算说理充分。注意：只能判双方请你判的事，多判了叫<b>超裁</b>，那部分会被撤销。',ic:'ic-pen'}
@@ -45,10 +45,12 @@ function showTip(id){
 let curScene='';
 function setScene(name){
   curScene=name;
-  byId('scSvg').innerHTML='<use href="#sc-'+name+'"/>';
+  /* 场景图固定按 1200×600 摆放：现场搜查平移 viewBox 时，画面跟着平移，而不是被压扁 */
+  const U=function(id){return '<use href="#'+id+'" x="0" y="0" width="1200" height="600"/>';};
+  byId('scSvg').innerHTML=U('sc-'+name);
   const inside=SCENES.isChamber(name);
-  byId('scBench').innerHTML=inside?'<use href="#fg-bench-'+name+'"/>':'';
-  byId('scDesk').innerHTML=inside?'<use href="#fg-desks-'+name+'"/>':'';
+  byId('scBench').innerHTML=inside?U('fg-bench-'+name):'';
+  byId('scDesk').innerHTML=inside?U('fg-desks-'+name):'';
   const th=byId('theater');th.setAttribute('data-scene',name);th.setAttribute('data-inside',inside?'1':'0');
   const rc=SCENES.rim(name).replace('#','');th.style.setProperty('--beam',parseInt(rc.slice(0,2),16)+','+parseInt(rc.slice(2,4),16)+','+parseInt(rc.slice(4,6),16));
   ['actL','actR','actM'].forEach(function(id){const e=byId(id);e.className='actor '+(id==='actL'?'left':id==='actR'?'right':'mid');e.innerHTML='';e.removeAttribute('data-who');});
@@ -64,7 +66,8 @@ function layoutStage(){
   M.style.width=aw.toFixed(1)+'px';M.style.left=(ox+600*s-aw/2).toFixed(1)+'px';M.style.top=(oy+(292-61*1.25)*s).toFixed(1)+'px';M.style.bottom='auto';
   const narrow=W<700,deskOn=inside&&(ox+330*s>60);
   [['actL',150],['actR',1050]].forEach(function(p){
-    const e=byId(p[0]),w=narrow?Math.min(W*.58,280):Math.max(200,Math.min(W*.21,330)),h=w*170/120;
+    /* 两侧人物按画面的宽和高一起算：宽屏矮屏（手机横放、宽窗口）时不会大得压住整个画面 */
+    const e=byId(p[0]),w=narrow?Math.min(W*.58,280,H*.62*120/170):clamp(Math.min(W*.2,H*.55*120/170),110,320),h=w*170/120;
     e.style.width=w.toFixed(1)+'px';
     let bottom=0;if(deskOn){const deskY=oy+488*s,top=deskY-h*(140/170);bottom=H-(top+h);}
     e.style.bottom=bottom.toFixed(1)+'px';
@@ -132,6 +135,8 @@ function dlgTap(){
   if(!TH.running)return;
   if(TH.typing){TH.typing=false;byId('dlgText').innerHTML=TH.fullText;return;}
   if(TH.resolver){const r=TH.resolver;TH.resolver=null;r();return;}
+  /* 质证时点对白框：听下一句（不追问） */
+  if(TH.crossRes&&byId('crossbar').classList.contains('on')){crossAct('next');return;}
   if(TH.crossRes)nudgeCross();
 }
 function nudgeCross(){const cb=byId('crossbar');if(!cb.classList.contains('on'))return;cb.classList.remove('nudge');void cb.offsetWidth;cb.classList.add('nudge');}
@@ -160,9 +165,13 @@ function choose(head,ask,opts,render){
   return new Promise(function(res){
     const box=byId('choices');
     box.innerHTML=(head?'<div class="chead">'+head+'</div>':'')+(ask?'<div class="cask">'+fill(ask)+'</div>':'');
-    opts.forEach(function(o,i){
-      const b=el('button','choice'+(o.cls?' '+o.cls:''));b.style.animationDelay=(i*.06)+'s';
-      b.innerHTML='<span class="ci">'+(i+1)+'</span><span class="cbody">'+(render?render(o,i):fill(o.x||o.t))+'</span>';
+    /* 有对错之分的选项每次打乱顺序，正确答案不会总在第一个；返回的仍是原数组里的下标 */
+    const graded=opts.some(function(o){return o&&typeof o==='object'&&('ok' in o||'legal' in o);});
+    const order=opts.map(function(_,i){return i;});
+    if(graded)for(let i=order.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)),t=order[i];order[i]=order[j];order[j]=t;}
+    order.forEach(function(i,pos){
+      const o=opts[i],b=el('button','choice'+(o.cls?' '+o.cls:''));b.style.animationDelay=(pos*.06)+'s';b.setAttribute('data-i',i);
+      b.innerHTML='<span class="ci">'+(pos+1)+'</span><span class="cbody">'+(render?render(o,i):fill(o.x||o.t))+'</span>';
       b.onclick=function(e){if(e.target.closest('.term'))return;SFX.tap();box.classList.remove('on');box.innerHTML='';res(i);};
       box.appendChild(b);
     });
@@ -198,7 +207,7 @@ function updateMorale(){
   m.innerHTML='';for(let i=0;i<TH.mcap;i++){const d=el('i');if(i>=TH.morale)d.className='lost';else if(i>=5)d.className='extra';m.appendChild(d);}
 }
 function updateStanding(dir){
-  const e=byId('standing');if(!hasMech('standing')){e.innerHTML='';return;}
+  const e=byId('standing');e.removeAttribute('data-k');if(!hasMech('standing')){e.innerHTML='';return;}
   e.innerHTML='';for(let i=0;i<5;i++){const d=el('i');if(i>=TH.standing)d.className='lost';e.appendChild(d);}
   if(dir){e.classList.remove('up','down');void e.offsetWidth;e.classList.add(dir>0?'up':'down');}
 }
@@ -229,7 +238,7 @@ async function startChapter(id){
   document.body.classList.add('in-theater');
   byId('theater').classList.add('on');
   byId('thYear').textContent=C.year;
-  updateMorale();updateStanding();setMission('');
+  updateMorale();if(C.arbiter)updateImpartial();else updateStanding();setMission('');/* 仲裁员章节一开始就显示“公正”，不先闪一下上一章的人望 */
   byId('hintBtn').classList.toggle('hidden',!hasMech('cross')&&!hasMech('chain'));
   HUD.hideHub();
   await irisTo(function(){layoutStage();});
@@ -277,7 +286,7 @@ async function runOp(s){
     case 'scene':await irisTo(function(){setScene(s.sc);});if(s.mus)MUSIC.setMode(s.mus);await sleep(200);return;
     case 'say':return say(s.w,s.x,s);
     case 'music':MUSIC.setMode(s.m);return;
-    case 'tip':return showTip(s.id);
+    case 'tip':return S.tips.indexOf(s.id)>=0?Promise.resolve():showTip(s.id);/* 新机制说明只在第一次出现，重玩章节时不再弹 */
     case 'mission':setMission(s.x);return;
     case 'choice':return doChoice(s);
     case 'invest':return doInvest(s.d);
@@ -335,7 +344,7 @@ function exitTheater(){
 function endTheater(won){
   TH.running=false;scriptGen++;
   skipHold(false);
-  ['choices','shelf','crossbar','tipCard','board'].forEach(function(id){byId(id).classList.remove('on');});
+  ['choices','shelf','crossbar','tipCard','board','inspectDone'].forEach(function(id){byId(id).classList.remove('on');});setMission('');Search.end();
   byId('theater').classList.remove('on');document.body.classList.remove('in-theater');
   HUD.showHub();Hub.refresh(won?TH.ch:null);
   MUSIC.setMode(Hub.musicHere());

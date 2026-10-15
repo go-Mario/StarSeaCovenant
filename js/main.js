@@ -61,10 +61,11 @@
       if(byId('shelf').classList.contains('on')){if(k==='Escape'){byId('shelfCancel').click();return;}nth('#shelfList .sh-item',k,e);return;}
       if(byId('choices').classList.contains('on')){nth('#choices .choice',k,e);return;}
       if(byId('board').classList.contains('on')){return;}
-      if(byId('crossbar').classList.contains('on')){const m={q:'press',w:'ev',e:'law',h:'hint'}[k.toLowerCase()];if(m){e.preventDefault();if(m==='hint')useHint();else if(m!=='law'||!byId('btnLaw').classList.contains('hidden')){SFX.tap();crossAct(m);}return;}}
+      if(byId('crossbar').classList.contains('on')){if(k==='ArrowRight'||k==='ArrowDown'){e.preventDefault();crossAct('next');return;}const m={q:'press',w:'ev',e:'law',h:'hint'}[k.toLowerCase()];if(m){e.preventDefault();if(m==='hint')useHint();else if(m!=='law'||!byId('btnLaw').classList.contains('hidden')){SFX.tap();crossAct(m);}return;}}
       if(k===' '||k==='Enter'){e.preventDefault();dlgTap();}
       return;
     }
+    if(byId('pen').classList.contains('on')){if(k==='Escape')Pen.back();return;}
     if(byId('game').classList.contains('on')){if(k==='Escape')Games.close();return;}
     if(byId('panel').classList.contains('on')){if(k==='Escape')Panels.close();return;}
     if(byId('hub').classList.contains('on')){

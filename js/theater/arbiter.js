@@ -72,23 +72,26 @@ async function doInspect(d){
   const svg=byId('scSvg');let left=d.spots.length;
   await new Promise(function(resolve){
     let fin=false;
-    const done=function(){if(fin)return;fin=true;$$('#scSvg .hotspot').forEach(function(h){h.remove();});resolve();};
+    const done=function(){if(fin)return;fin=true;$$('#scSvg .hotspot').forEach(function(h){h.remove();});Search.end();resolve();};
     const btn=byId('inspectDone');btn.classList.add('on');btn.onclick=function(){if(TH.busy||TH.typing||TH.resolver)return;SFX.tap();btn.classList.remove('on');done();};
     d.spots.forEach(function(sp){
       const g=document.createElementNS('http://www.w3.org/2000/svg','g');
-      g.setAttribute('class','hotspot blue');g.setAttribute('transform','translate('+sp.x+','+sp.y+')');
+      g.setAttribute('class','hotspot blue');g.setAttribute('transform','translate('+sp.x+','+sp.y+')');g.setAttribute('data-x',sp.x);g.setAttribute('data-y',sp.y);
       g.innerHTML='<circle class="ring" r="16"/><circle class="dot" r="5"/><circle class="hit" r="42"/>';
       g.addEventListener('click',async function(e){
         e.stopPropagation();if(fin)return;if(TH.busy||TH.typing||TH.resolver){dlgTap();return;}
-        TH.busy=true;SFX.reveal();g.remove();left--;
+        TH.busy=true;SFX.reveal();g.remove();left--;Search.idle(false);
         for(const op of sp.say)await runOp(op);
         if(sp.fact)addFact(sp.fact);
         TH.busy=false;
         if(left<=0){btn.classList.remove('on');done();}
+        else Search.idle(true);
       });
       svg.appendChild(g);
     });
+    Search.begin(d.hint);
   });
+  if(!TH.running)return 'fail';/* 勘验途中退出了本章：不要在别的章节里接着跑 */
   setMission('');
   if(d.outro)for(const op of d.outro)await runOp(op);
   await irisTo(function(){setScene(d.back);});MUSIC.setMode('court');
@@ -136,6 +139,10 @@ async function doAward(d){
   d.issues.forEach(function(iss,k){const o=iss.opts[picks[k]],q=holdingQuality(o);pts+=q.pts;res.push({iss:iss,o:o,q:q});if(q.k==='ultra')ultra={iss:iss,o:o};
     TH.picks.push({q:iss.title,ok:q.k==='solid',tag:q.n});if(q.k!=='solid')TH.flawless=false;});
   TH.award={res:res,pts:pts,max:max,ultra:ultra};
+  /* 谁来申请撤销：超裁那一项对谁不利，就是谁；否则看整份裁决对哪一方更不利 */
+  const tally={c:0,r:0};res.forEach(function(r){if(r.o.fav)tally[r.o.fav]++;});
+  const sideOfFav=function(f){return f==='r'?d.claimant:f==='c'?d.respondent:null;};
+  const applicant=(ultra&&(ultra.o.harm||sideOfFav(ultra.o.fav)))||(tally.r>tally.c?d.claimant:tally.c>tally.r?d.respondent:null)||d.loser||CUR.opp;
   SFX.gavel();await sleep(300);
   await say(CUR.bench,d.sign||'本庭裁决如下。');
   for(const r of res){await say(CUR.bench,'关于'+r.iss.title+'：'+r.o.t);}
@@ -144,14 +151,16 @@ async function doAward(d){
   if(CUR.advisory){
     if(ultra){await say('bankole','青年席，“'+ultra.iss.title+'”这一项超出了请求方提出的问题。咨询意见只回答被问到的问题，这一段在定稿时删去。');TH.ultraHit=true;SFX.lose();}
   }else if(ultra){
-    await say(d.loser||CUR.opp,'我方申请撤销裁决中关于“'+ultra.iss.title+'”的部分。理由：双方从未请求仲裁庭对此作出决定，仲裁庭超出了请求范围。');
+    await say(applicant,'我方申请撤销裁决中关于“'+ultra.iss.title+'”的部分。理由：双方从未请求仲裁庭对此作出决定，仲裁庭超出了请求范围。');
     await say('chen','超裁是法定的撤销理由。法院审查后，撤销了这一部分，其他部分仍然有效。');
     SFX.lose();TH.ultraHit=true;
   }else{
-    await say(d.loser||CUR.opp,'我方认为裁决认定错误，申请撤销。');
+    await say(applicant,'我方认为裁决认定错误，申请撤销。');
     await say('chen','法院驳回了撤销申请：对事实认定和法律适用不服，不是撤销理由。你的裁决站住了。');
   }
-  if(d.outro)for(const op of d.outro)await runOp(op);
+  /* 结尾那句话要和裁决的实际质量对得上 */
+  const outro=((pts<max||ultra)&&d.outroFlawed)?d.outroFlawed:d.outro;
+  if(outro)for(const op of outro)await runOp(op);
 }
 
 /* ---------------- 第六章：青年席意见与回信 ---------------- */
