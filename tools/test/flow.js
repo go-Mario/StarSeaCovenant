@@ -1,0 +1,35 @@
+// 界面流转：星图 → 降落 → 点章节看案卷 → 返回 → 点小游戏 → 返回 → 起飞，检查每一步落在该落的界面
+let PW;try{PW=require('playwright');}catch(e){PW=require('/opt/node-tools/node_modules/playwright');}
+const BASE=process.env.SS_URL||'http://127.0.0.1:8765/index.html';
+(async()=>{const b=await PW.chromium.launch();const ctx=await b.newContext({viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true});const p=await ctx.newPage();
+const errs=[];p.on('pageerror',e=>errs.push(e.message));
+const st=()=>p.evaluate(()=>({hub:byId('hub').classList.contains('on'),pv:PlanetView.current(),card:byId('chapterCard').classList.contains('on'),game:byId('game').classList.contains('on'),panel:byId('panel').classList.contains('on'),th:TH.running}));
+const check=async(name,want)=>{const s=await st();const ok=Object.keys(want).every(k=>s[k]===want[k]);console.log((ok?'ok  ':'FAIL')+' '+name,ok?'':JSON.stringify(s));if(!ok)process.exitCode=1;};
+await p.goto(BASE+'#hub');await p.waitForTimeout(1200);
+await check('start on map',{hub:true,pv:''});
+await p.tap('.wl[data-w="theater"] .wl-tag');await p.waitForTimeout(1500);
+await check('landed on theater',{pv:'theater'});
+await p.tap('#pvNodes .pn[data-id="ch2"]');await p.waitForTimeout(500);
+await check('locked chapter stays',{pv:'theater',card:false});
+await p.tap('#pvNodes .pn[data-id="ch1"]');await p.waitForTimeout(900);
+await check('case file open',{card:true});
+await p.tap('#ccBack');await p.waitForTimeout(700);
+await check('back to planet',{card:false,pv:'theater',hub:true,th:false});
+await p.tap('#pvBack');await p.waitForTimeout(1200);
+await check('took off',{pv:'',hub:true});
+await p.tap('.wl[data-w="leo"] .wl-tag');await p.waitForTimeout(1500);
+await p.tap('#pvNodes .pn[data-id="orbit"]');await p.waitForTimeout(700);
+await check('game open',{game:true});
+await p.tap('#gmBack');await p.waitForTimeout(700);
+await check('back to leo',{game:false,pv:'leo',hub:true});
+await p.tap('#pvBack');await p.waitForTimeout(1200);
+await p.tap('.wl[data-w="archive"] .wl-tag');await p.waitForTimeout(1500);
+await p.tap('#pvNodes .pn[data-id="laws"]');await p.waitForTimeout(600);
+await check('archive panel',{panel:true});
+await p.tap('#pnBack');await p.waitForTimeout(500);
+await check('back to archive',{panel:false,pv:'archive'});
+await p.keyboard.press('Escape');await p.waitForTimeout(1200);
+await check('escape takes off',{pv:''});
+await p.tap('#btnNext');await p.waitForTimeout(1600);
+await check('continue button lands on theater',{pv:'theater'});
+console.log('errors:',errs.length?errs:'none');await b.close();})();
