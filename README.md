@@ -27,6 +27,7 @@ python3 -m http.server 8765
 | --- | --- |
 | `index.html#hub` | 跳过开机和开场，直接进星图 |
 | `index.html?intro=clips` | 开场改用 `assets/intro/` 的影像（会标注 AI 生成） |
+| `index.html?intro=2d` | 开场改用手绘版（不用 WebGL） |
 | `index.html#ch=ch3` | 直接进第三章（前面的章节记为已完成） |
 | `index.html#game=sling` | 直接打开某个小游戏 |
 

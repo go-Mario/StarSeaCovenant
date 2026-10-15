@@ -24,6 +24,9 @@
 #introFrame{position:absolute;inset:0}
 #introCv{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:0;transition:opacity .9s}
 #introCv.on{opacity:1}
+#introGL,#introOv{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:0;transition:opacity .9s}
+#introGL.on,#introOv.on{opacity:1}
+#introOv{pointer-events:none}
 #introAI{position:absolute;top:calc(8% + var(--safe-t));right:14px;z-index:6;display:none;padding:3px 8px;border-radius:4px;border:1px solid rgba(255,255,255,.4);background:rgba(0,0,0,.45);color:rgba(255,255,255,.85);font-size:11px;letter-spacing:.12em}
 #introAI.on{display:block}
 .ishot{position:absolute;inset:0;opacity:0;transition:opacity 1s var(--ease)}
@@ -49,7 +52,8 @@
 #introSub .tx.hide{opacity:0;transform:translateY(4px)}
 #introHint{position:absolute;left:0;right:0;bottom:64px;z-index:5;text-align:center;font-size:11px;letter-spacing:.24em;color:rgba(220,226,236,.55);opacity:0;transition:opacity 1s;pointer-events:none}
 #introHint.on{opacity:1}
-#introTitle{position:absolute;inset:0;z-index:6;display:none;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 55%,#16243F,#03040A 70%)}
+#introTitle{position:absolute;inset:0;z-index:6;display:none;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 55%,rgba(22,36,63,.62),rgba(3,4,10,.94) 72%);animation:titleIn 1.6s var(--ease) both}
+@keyframes titleIn{from{opacity:0}to{opacity:1}}
 #introTitle.on{display:flex}
 .it-name{font-family:var(--f-serif);font-size:clamp(36px,7vw,60px);letter-spacing:.44em;text-indent:.44em;color:#F3ECD8;animation:fadeUp 1.4s .2s var(--ease) both}
 .it-sig{font-family:var(--f-script);font-size:clamp(30px,6vw,48px);color:var(--sig-2);transform:rotate(-4deg);animation:fadeUp 1.2s .7s var(--ease) both}

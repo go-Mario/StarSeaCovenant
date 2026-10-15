@@ -16,8 +16,12 @@ const INTRO_SHOTS=[
    drawn = 程序绘制的动画（默认，素材全部自有，体积小）；
    clips = assets/intro/ 里的 7 段影像（经分析判断为 AI 生成，播放时角落会标注“画面由 AI 生成”）。
    确认影像来源和授权后，把下面改成 'clips' 即可；调试时也可以在地址后加 ?intro=clips */
-const INTRO_CFG={mode:/[?&]intro=clips/.test(location.search)?'clips':'drawn'};
+const INTRO_CFG={mode:/[?&]intro=clips/.test(location.search)?'clips':'drawn',renderer:/[?&]intro=2d/.test(location.search)?'2d':'gl'};
 const Intro=(function(){
+  /* 画面：优先用 WebGL 影院版（cine.js），不支持或编译失败时用手绘版（film.js） */
+  let FR=null;
+  function rStart(){FR=null;if(INTRO_CFG.renderer==='gl'&&Cine.ok()&&Cine.start())FR=Cine;else{Film.start();FR=Film;}}
+  function rShow(i,ms,cut){if(FR===Cine&&!Cine.show(i,ms,cut)){Cine.stop();Film.start();FR=Film;}if(FR===Film)Film.show(i,ms,cut);}
   let on=false,pause=false,skipShot=false,clipsOK=null,resolver=null,timer=null;
   function wait(ms){return new Promise(function(res){let el=0;clearInterval(timer);timer=setInterval(function(){if(!on||skipShot){clearInterval(timer);res();return;}if(!pause)el+=100;if(el>=ms){clearInterval(timer);res();}},100);});}
   function tryClip(v,src){return new Promise(function(res){
@@ -39,7 +43,7 @@ const Intro=(function(){
       const rate=isFinite(v.duration)&&v.duration>0?clamp(v.duration*1000/want,.45,.85):.6;
       try{v.playbackRate=rate;v.currentTime=0;const p=v.play();if(p&&p.catch)p.catch(function(){});}catch(e){}
       void L.offsetWidth;L.classList.add('on',sh.cam);if(P)P.classList.remove('on');}
-    else{Film.show(i,ms+900,!!sh.dip);if(P)P.classList.remove('on');}
+    else{rShow(i,ms+900,!!sh.dip);if(P)P.classList.remove('on');}
     if(sh.dip&&i>0){byId('introDip').classList.remove('on');sub.style.opacity='';}
     const tx=byId('introTx');tx.classList.add('hide');tx.innerHTML=sh.tx;
     const stop=AMB.run(sh.amb,9);
@@ -54,7 +58,7 @@ const Intro=(function(){
     await wait(3000);t.classList.remove('on');byId('introSub').style.opacity='';
   }
   function finish(){
-    if(!on)return;on=false;clearInterval(timer);Film.stop();byId('introAI').classList.remove('on');
+    if(!on)return;on=false;clearInterval(timer);if(FR)FR.stop();byId('introAI').classList.remove('on');
     byId('intro').classList.remove('on');byId('introTitle').classList.remove('on');byId('introDip').classList.remove('on');
     $$('#intro video').forEach(function(v){try{v.pause();v.removeAttribute('src');v.load();}catch(e){}});
     S.profile.introSeen=true;save();
@@ -66,7 +70,7 @@ const Intro=(function(){
         resolver=res;on=true;pause=false;
         byId('intro').classList.add('on');byId('introBarFill').style.width='0%';
         const h=byId('introHint');h.classList.add('on');setTimeout(function(){h.classList.remove('on');},5000);
-        MUSIC.start();MUSIC.setMode('intro');Film.start();
+        MUSIC.start();MUSIC.setMode('intro');rStart();
         for(let i=0;i<INTRO_SHOTS.length&&on;i++)await shot(INTRO_SHOTS[i],i);
         if(on)await title();
         finish();
@@ -75,7 +79,7 @@ const Intro=(function(){
     },
     tap(){if(!on||pause)return;skipShot=true;},
     skip(){SFX.tap();finish();},
-    pause(){if(!on)return;pause=!pause;Film.pause(pause);byId('introPause').innerHTML=pause?icon('ic-play')+'继续':icon('ic-pause')+'暂停';
+    pause(){if(!on)return;pause=!pause;if(FR)FR.pause(pause);byId('introPause').innerHTML=pause?icon('ic-play')+'继续':icon('ic-pause')+'暂停';
       $$('#intro video').forEach(function(v){try{if(pause)v.pause();else{const p=v.play();if(p&&p.catch)p.catch(function(){});}}catch(e){}});SFX.tap();},
     isOn(){return on;}
   };

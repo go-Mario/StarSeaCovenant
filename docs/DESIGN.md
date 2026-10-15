@@ -134,7 +134,8 @@
 | `node tools/test/play.js settle phone` | 第四章选择和解 |
 | `node tools/test/play.js bad phone ch2` | 专挑错的，测输掉一庭的流程 |
 | `node tools/test/games.js phone` | 八个小游戏各玩一局，再把各个面板截图 |
-| `node tools/test/film.js` | 开场动画七个镜头各截一张 |
+| `node tools/test/cine.js` | 影院版开场：检查七个着色器都能编译，并按指定进度各截一张（`P=0.5 node tools/test/cine.js`） |
+| `node tools/test/film.js` | 手绘版开场七个镜头各截一张 |
 | `node tools/test/perf.js 4` | CPU 降速 4 倍，测星图、降落、法庭对白的帧率 |
 | `node tools/test/sfx.js` | 离线渲染每个音效，看峰值和响度是否在一个档位里 |
 | `node tools/test/sim-sling.js` | 离线验证引力弹弓每一关都有解，并给出解的数量 |
@@ -144,7 +145,12 @@
 
 ## 十、开场
 
-`js/ui/intro.js` 管字幕和节奏，`js/ui/film.js` 画画面。七个镜头：
+`js/ui/intro.js` 管字幕和节奏。画面有两套：
+
+- **影院版**（`js/ui/cine.js`，默认）：每个镜头是一段 WebGL 片元着色器，地球的海陆云与城市灯光、大气散射和日出、会反射环境的金属球、月面低角度阳光下的长影子、云海、星云和光柱都是实时算出来的；卫星轨道、挖掘机、月尘这类小东西画在叠加的 2D 画布上。帧时偏长时自动降分辨率；不支持 WebGL 或着色器编译失败时，自动换成手绘版。
+- **手绘版**（`js/ui/film.js`）：Canvas 2D，画面更简单，所有设备都能跑。地址后加 `?intro=2d` 可以强制使用。
+
+七个镜头：
 
 1. 1957 年，夜半球上空，斯普特尼克 1 号滑过（按真实外形画：抛光金属球拖着四根天线），配“嘀、嘀”声和一圈圈电波；
 2. 六十多年后，地球周围的卫星越来越多；
