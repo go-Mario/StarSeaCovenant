@@ -24,7 +24,7 @@ const WORLDS=[
  {id:'relax',name:'休憩舱',en:'REST POD',x:-255,y:255,r:30,look:'teal',music:'relax',
   line:'不计输赢。玩一会儿，精力会回来。',items:['const','sweep','paint']},
  {id:'bench',name:'见习裁判席',en:'TRAINING BENCH',x:255,y:255,r:30,look:'violet',music:'court',
-  line:'五个小案子，没有标准答案。每天还有一案。'}
+  line:'五个小案子，没有标准答案；每天还有五句速判。'}
 ];
 const WORLD_BY={station:STATION};WORLDS.forEach(function(w){WORLD_BY[w.id]=w;});
 /* 航迹：一个椭圆，按年份顺时针走 300° */
@@ -65,59 +65,192 @@ const MapArt=(function(){
     amber:{a:'#FBE3B0',b:'#C9813E',c:'#4A240C',atm:'255,190,120',bands:['rgba(90,40,10,.22)','rgba(255,235,200,.16)']},
     mars:{a:'#F6C29A',b:'#C2643A',c:'#3E170C',atm:'255,170,130'}
   };
-  /* 画一颗星球到 (0,0)，半径 R。光从左上来 */
+  const TAU=Math.PI*2;
+  /* ===== 逐像素的星球 =====
+     先按经纬度生成一张贴图（每种外观、每个种子只生成一次）：颜色、高度、云、水面、城市灯光；
+     再按球面逐像素采样，算光照（漫反射、柔和的晨昏线、海面高光、地形起伏、夜面灯光、大气边缘散射）。
+     比矢量画法真实得多，而且没有拼接的接缝。 */
+  const PERM=new Uint8Array(512),VAL=new Float32Array(256);
+  (function(){const r=rng(1337),p=[];for(let i=0;i<256;i++){p[i]=i;VAL[i]=r();}for(let i=255;i>0;i--){const j=Math.floor(r()*(i+1)),t=p[i];p[i]=p[j];p[j]=t;}for(let i=0;i<512;i++)PERM[i]=p[i&255];})();
+  function vn(x,y,z){
+    const xi=Math.floor(x),yi=Math.floor(y),zi=Math.floor(z);let u=x-xi,v=y-yi,w=z-zi;
+    u=u*u*(3-2*u);v=v*v*(3-2*v);w=w*w*(3-2*w);
+    const X=xi&255,Y=yi&255,Z=zi&255,A=PERM[X]+Y,B=PERM[X+1]+Y,AA=PERM[A]+Z,AB=PERM[A+1]+Z,BA=PERM[B]+Z,BB=PERM[B+1]+Z;
+    const a=VAL[PERM[AA]],b=VAL[PERM[BA]],c=VAL[PERM[AB]],d=VAL[PERM[BB]],e=VAL[PERM[AA+1]],f=VAL[PERM[BA+1]],g=VAL[PERM[AB+1]],h=VAL[PERM[BB+1]];
+    const x1=a+(b-a)*u,x2=c+(d-c)*u,x3=e+(f-e)*u,x4=g+(h-g)*u,y1=x1+(x2-x1)*v,y2=x3+(x4-x3)*v;return y1+(y2-y1)*w;
+  }
+  function fbm(x,y,z,o){let s=0,a=.5,n=0;for(let i=0;i<o;i++){s+=vn(x,y,z)*a;n+=a;x=x*2.03+17.1;y=y*2.03+3.7;z=z*2.03+9.3;a*=.5;}return s/n;}
+  function sst(a,b,x){const t=Math.min(1,Math.max(0,(x-a)/(b-a)));return t*t*(3-2*t);}
+  function hex(h){return [parseInt(h.slice(1,3),16)/255,parseInt(h.slice(3,5),16)/255,parseInt(h.slice(5,7),16)/255];}
+  /* 气态行星的条纹配色：亮带和暗带交替 */
+  const BANDS={
+    amber:['#EADAC0','#CFA27A','#F3E6CF','#B98258','#E6CCA6','#A06C48','#EEDDC2','#D2AE88'],
+    gold:['#F0DFB0','#D9BD82','#F5E8C4','#CBAA6E','#E8D19C','#BF9A5C'],
+    teal:['#A6E6DC','#8FD6CE','#B8EEE6','#7FC9C1','#9EDFD6'],
+    violet:['#D3C3F6','#A58BE2','#E0D5F8','#8468CC','#C3AFEF','#7458BE','#CDBCF4']
+  };
+  const TEXC={},JOBS={},TW=256,TH=128;
+  /* 贴图按行生成：可以一口气做完，也可以每帧做几行（见 warm） */
+  function texJob(look){
+    const key=look;if(JOBS[key])return JOBS[key];
+    const N=TW*TH,col=new Float32Array(N*3),hg=new Float32Array(N),cl=new Float32Array(N),wa=new Float32Array(N),ci=new Float32Array(N);
+    const R=rng(7919+look.length*131+look.charCodeAt(0)),o=[R()*40,R()*40,R()*40,R()*40];
+    let cr=null;
+    if(look==='moon'||look==='mars'){cr=[];const n=look==='moon'?90:40;for(let i=0;i<n;i++){const z=R()*2-1,a=R()*TAU,q=Math.sqrt(1-z*z),r=.02+Math.pow(R(),3.6)*(look==='moon'?.2:.11);cr.push([q*Math.cos(a),z,q*Math.sin(a),r,Math.cos(Math.min(3,r*1.6)),i<4]);}}
+    let band=null,spot=null;
+    if(BANDS[look]){const P=BANDS[look].map(hex);band=[];let k=0,y=-1;while(y<1){const w=(look==='teal'?.16:.07)+R()*(look==='teal'?.2:.13);band.push([y,y+w,P[k%P.length]]);k+=1+(R()<.25?1:0);y+=w;}
+      if(look==='amber')spot={lat:-.38,lon:.9,a:.2,b:.085};if(look==='violet')spot={lat:.3,lon:-1.2,a:.16,b:.07};}
+    const bandAt=function(y){for(let i=0;i<band.length;i++){const b=band[i];if(y<b[1]){const t=sst(b[1]-.045,b[1]+.01,y),n=band[Math.min(band.length-1,i+1)][2],c=b[2];return [c[0]+(n[0]-c[0])*t,c[1]+(n[1]-c[1])*t,c[2]+(n[2]-c[2])*t];}}return band[band.length-1][2];};
+    function rowFn(j){{
+      const lat=(.5-(j+.5)/TH)*Math.PI,cy=Math.cos(lat),y=Math.sin(lat),al=Math.abs(lat)/(Math.PI/2);
+      for(let i=0;i<TW;i++){
+        const lon=((i+.5)/TW-.5)*TAU,x=cy*Math.sin(lon),z=cy*Math.cos(lon),k=j*TW+i;
+        let r=0,g=0,b=0,h=0,c=0,w=0,l=0;
+        if(look==='earth'){
+          const e=fbm(x*1.15+o[0],y*1.15+o[1],z*1.15+o[2],5)*.8+fbm(x*4+o[1],y*4,z*4,2)*.2,sea=.53;
+          if(e<sea){const d=sst(0,.1,sea-e);r=.07-d*.045;g=.24-d*.15;b=.5-d*.22;w=1;}
+          else{const t=e-sea,m=fbm(x*2.4+o[2],y*2.4+o[0],z*2.4+o[1],3),dry=sst(.52,.64,m)*(1-sst(.5,.72,al)),hi=sst(.05,.14,t);
+            r=.16+dry*.38;g=.29+dry*.14;b=.14+dry*.07;r+=hi*(.4-r)*.5;g+=hi*(.36-g)*.5;b+=hi*(.3-b)*.5;
+            h=t*2;if(al<.66){const cq=vn(x*30+o[3],y*30,z*30);if(cq>.7)l=sst(.7,.86,cq)*.8;}}
+          if(al>.7){const ice=sst(.8,.9,al+(vn(x*6,y*6,z*6)-.5)*.16);r+=(.9-r)*ice;g+=(.93-g)*ice;b+=(.97-b)*ice;w*=1-ice;l*=1-ice;h+=ice*.2;}
+          const wq=vn(x*1.5+o[3],y*1.5,z*1.5),q=fbm(x*2.2+wq*1.8,y*4.4+wq*1.3,z*2.2-wq*1.6,4);
+          c=sst(.5,.72,q)*(.6+.4*Math.abs(Math.cos(lat*3)))+sst(.62,.78,vn(x*7+o[1],y*7,z*7))*.2;c=Math.min(1,c);
+        }else if(look==='moon'){
+          const m=fbm(x*1.3+o[0],y*1.3+o[1],z*1.3+o[2],4),f=fbm(x*7,y*7,z*7,3);
+          const v=.68+(f-.5)*.18-sst(.52,.6,m)*.3;r=g=b=v;r*=1.02;b*=.96;
+          for(let q=0;q<cr.length;q++){const C=cr[q],dt=x*C[0]+y*C[1]+z*C[2];if(dt<C[4])continue;const t=Math.acos(Math.min(1,dt))/C[3];
+            if(t<1)h-=(1-t*t)*Math.min(C[3],.08)*1.4;else if(t<1.35)h+=Math.exp(-Math.pow((t-1.05)/.13,2))*Math.min(C[3],.08)*.6;
+            if(C[5]&&t<3.2){const ray=sst(.55,.75,vn(Math.atan2(x-C[0],z-C[2])*6,t,q))*(1-t/3.2);r+=ray*.16;g+=ray*.16;b+=ray*.16;}}
+        }else if(look==='mars'){
+          const m=fbm(x*1.8+o[0],y*1.8+o[1],z*1.8+o[2],5),f=fbm(x*6,y*6,z*6,3),dk=sst(.55,.66,m),lt=sst(.46,.36,m);
+          r=.74+(f-.5)*.12;g=.38+(f-.5)*.08;b=.22;r+=(.42-r)*dk;g+=(.21-g)*dk;b+=(.13-b)*dk;r+=(.88-r)*lt*.5;g+=(.6-g)*lt*.5;b+=(.42-b)*lt*.5;
+          const cap=sst(.86,.92,al+(y>0?.02:-.03)+(f-.5)*.08);r+=(.95-r)*cap;g+=(.93-g)*cap;b+=(.9-b)*cap;
+          for(let q=0;q<cr.length;q++){const C=cr[q],dt=x*C[0]+y*C[1]+z*C[2];if(dt<C[4])continue;const t=Math.acos(Math.min(1,dt))/C[3];
+            if(t<1)h-=(1-t*t)*C[3]*1.3;else if(t<1.35)h+=Math.exp(-Math.pow((t-1.05)/.13,2))*C[3]*.6;}
+          h+=(m-.5)*.25;
+        }else{
+          const tb=(fbm(x*2.6+o[0],y*7+o[1],z*2.6+o[2],4)-.5)*(look==='teal'?.04:look==='violet'?.07:.11),sw=fbm(x*9+o[2],y*20,z*9,3);
+          const cc=bandAt(y+tb);r=cc[0];g=cc[1];b=cc[2];const n=(sw-.5)*(look==='teal'?.04:.08);r+=n;g+=n;b+=n;
+          if(spot){let dl=lon-spot.lon;dl=dl-Math.round(dl/TAU)*TAU;const e=Math.pow(dl/spot.a,2)+Math.pow((lat-spot.lat)/spot.b,2);
+            if(e<1.4){const t=sst(1.4,.5,e),core=sst(.7,.1,e);const sr=look==='amber'?[.78,.42,.28]:[.95,.85,1];r+=(sr[0]-r)*t*.85;g+=(sr[1]-g)*t*.85;b+=(sr[2]-b)*t*.85;r-=core*.06;g-=core*.06;}}
+        }
+        col[k*3]=r;col[k*3+1]=g;col[k*3+2]=b;hg[k]=h;cl[k]=c;wa[k]=w;ci[k]=l;
+      }
+    }}
+    return JOBS[key]={key:key,row:0,fn:rowFn,out:{col:col,hg:hg,cl:cl,wa:wa,ci:ci}};
+  }
+  /* 同一种外观共用一张贴图；不同的种子只改变自转角度 */
+  function texture(look){
+    const key=look;if(TEXC[key])return TEXC[key];
+    const J=texJob(look);while(J.row<TH)J.fn(J.row++);
+    delete JOBS[key];return TEXC[key]=J.out;
+  }
+  /* 空闲时预先生成贴图：用浏览器的空闲时段，每次只占几毫秒，不让开场动画掉帧 */
+  let warmQ=[],warmT=0;
+  function warm(list){
+    list.forEach(function(k){if(!TEXC[k]&&warmQ.indexOf(k)<0)warmQ.push(k);});
+    if(warmT||!warmQ.length)return;
+    const ric=window.requestIdleCallback;
+    const tick=function(dl){
+      warmT=0;const t0=performance.now(),budget=dl&&dl.timeRemaining?Math.min(6,Math.max(1,dl.timeRemaining()-1)):4;
+      while(warmQ.length&&performance.now()-t0<budget){
+        const key=warmQ[0];
+        if(TEXC[key]){warmQ.shift();continue;}
+        const J=texJob(key);for(let n=0;n<4&&J.row<TH;n++)J.fn(J.row++);
+        if(J.row>=TH){TEXC[key]=J.out;delete JOBS[key];warmQ.shift();}
+      }
+      if(warmQ.length)warmT=ric?ric(tick,{timeout:400}):setTimeout(tick,32);
+    };
+    warmT=ric?ric(tick,{timeout:400}):setTimeout(tick,60);
+  }
+  const SPH={};
+  const ATM={earth:1,mars:.35,moon:0,gold:.45,amber:.45,teal:.85,violet:.7};
+  const BUMP={moon:4,mars:3,earth:.9};
+  const TILT={gold:-.32,amber:-.06,teal:.18,violet:-.12,earth:-.2,mars:.1,moon:0};
+  /* 一颗球的精灵：像素半径 Rp；返回 {c, pad}（画布半边长 = Rp*pad） */
+  function sphere(look,Rp,seed){
+    Rp=Math.max(3,Rp);const key=look+'|'+Math.round(Rp*2)+'|'+seed;if(SPH[key])return SPH[key];
+    const T=texture(look),am=ATM[look]||0,pad=am>0?1.22:1.04,half=Math.ceil(Rp*pad),S=half*2,c=cnv(S,S),g=c.getContext('2d'),img=g.createImageData(S,S),D=img.data;
+    const at=LOOK[look].atm.split(',').map(function(v){return +v/255;}),bump=(BUMP[look]||0)*Math.min(1,Rp/40),gas=!!BANDS[look],earth=look==='earth';
+    let lx=-.6,ly=-.48,lz=.64;const ll=Math.hypot(lx,ly,lz);lx/=ll;ly/=ll;lz/=ll;const l2=Math.hypot(lx,ly),sx2=lx/l2,sy2=ly/l2;
+    const tl=TILT[look]||0,ct=Math.cos(tl),st=Math.sin(tl),spin=(seed*2.399)%TAU,col=T.col,hg=T.hg,cl=T.cl,wa=T.wa,ci=T.ci;
+    function samp(arr,u,v){u=((u%TW)+TW)%TW;v=Math.min(TH-1.001,Math.max(0,v));const i0=Math.floor(u),j0=Math.floor(v),fu=u-i0,fv=v-j0,i1=(i0+1)%TW,j1=j0+1;
+      return (arr[j0*TW+i0]*(1-fu)+arr[j0*TW+i1]*fu)*(1-fv)+(arr[j1*TW+i0]*(1-fu)+arr[j1*TW+i1]*fu)*fv;}
+    function sampC(u,v,o){u=((u%TW)+TW)%TW;v=Math.min(TH-1.001,Math.max(0,v));const i0=Math.floor(u),j0=Math.floor(v),fu=u-i0,fv=v-j0,i1=(i0+1)%TW,j1=j0+1;
+      return (col[(j0*TW+i0)*3+o]*(1-fu)+col[(j0*TW+i1)*3+o]*fu)*(1-fv)+(col[(j1*TW+i0)*3+o]*(1-fu)+col[(j1*TW+i1)*3+o]*fu)*fv;}
+    for(let py=0;py<S;py++){for(let px=0;px<S;px++){
+      const X=(px+.5-half)/Rp,Y=(py+.5-half)/Rp,r2=X*X+Y*Y,id=(py*S+px)*4;
+      if(r2<1){
+        const nz=Math.sqrt(1-r2),bx=X*ct+Y*st,by=-X*st+Y*ct,lat=Math.asin(Math.max(-1,Math.min(1,-by))),lo=Math.atan2(bx,nz);
+        const u=((lo+spin)/TAU+.5)*TW,v=(.5-lat/Math.PI)*TH;
+        let nx=X,ny=Y,nzz=nz;
+        if(bump>0){const hu=samp(hg,u+1,v)-samp(hg,u-1,v),hv=samp(hg,u,v+1)-samp(hg,u,v-1),sl=Math.sin(lat),cl2=Math.cos(lat),cn=Math.cos(lo),sn=Math.sin(lo);
+          /* 东向与北向切线（本体坐标，y 向下），再转回屏幕坐标 */
+          const ex=cn,ez=-sn,qx=-sn*sl,qy=-cl2,qz=-cn*sl,du=hu*bump/Math.max(.2,cl2),dv=-hv*bump;
+          let tx=bx-(du*ex+dv*qx),ty=by-(dv*qy),tz=nz-(du*ez+dv*qz);
+          nx=tx*ct-ty*st;ny=tx*st+ty*ct;nzz=tz;const nl=Math.hypot(nx,ny,nzz);nx/=nl;ny/=nl;nzz/=nl;}
+        const dif=nx*lx+ny*ly+nzz*lz,d0=X*lx+Y*ly+nz*lz;
+        let s=Math.max(0,(dif+.05)/1.05);s=Math.pow(s,.9)*sst(-.12,.12,d0);
+        let r=sampC(u,v,0),g=sampC(u,v,1),b=sampC(u,v,2);
+        const amb=earth?.018:.025;r*=amb+s*1.12;g*=amb+s*1.12;b*=amb*1.3+s*1.12;
+        if(earth){
+          const c=samp(cl,u,v),w=samp(wa,u,v);
+          const rz=2*dif*nzz-lz,sp=Math.pow(Math.max(0,rz),28)*.7*w*(1-c);r+=sp;g+=sp*.95;b+=sp*.85;
+          if(d0<.08){const lt=samp(ci,u,v)*(1-c)*sst(.08,-.12,d0)*.95;r+=lt;g+=lt*.68;b+=lt*.32;}
+          const cs=Math.max(0,(d0+.05)/1.05);r=r*(1-c*.95)+c*(.02+cs*1.08);g=g*(1-c*.95)+c*(.02+cs*1.08);b=b*(1-c*.95)+c*(.03+cs*1.1);
+        }
+        if(gas){const ld=.5+.5*Math.pow(nz,.6);r*=ld;g*=ld;b*=ld;}
+        if(am>0){const rim=Math.pow(1-nz,2.6)*am*sst(-.3,.5,d0);r+=at[0]*rim*.9;g+=at[1]*rim*.9;b+=at[2]*rim*.9;}
+        const e=Math.min(1,Math.max(0,(1-Math.sqrt(r2))*Rp+.5));
+        D[id]=Math.min(255,r*255);D[id+1]=Math.min(255,g*255);D[id+2]=Math.min(255,b*255);D[id+3]=e*255;
+      }else if(am>0){
+        const rr=Math.sqrt(r2),d=rr-1,lit=Math.max(0,Math.min(1,.3+.9*((X/rr)*sx2+(Y/rr)*sy2)));
+        let a=am*Math.exp(-d/.055)*lit*.75;if(rr<1+1/Rp)a=Math.max(a,am*lit*.5);
+        if(a>.003){D[id]=at[0]*255;D[id+1]=at[1]*255;D[id+2]=at[2]*255;D[id+3]=Math.min(255,a*255);}
+      }
+    }}
+    g.putImageData(img,0,0);
+    return SPH[key]={c:c,pad:half/Rp};
+  }
+  /* 画一颗星球到 (0,0)，半径 R。一般用逐像素精灵；特别大的（降落后的地平线）退回矢量画法 */
   function drawPlanet(g,look,R,seed){
-    const L=LOOK[look],rnd=rng(seed||7);
+    const t=g.getTransform?g.getTransform():null,sc=t?Math.hypot(t.a,t.b):1,Rp=R*sc;
+    if(Rp<=560){const sp=sphere(look,Rp,seed||7),h=R*sp.pad;g.drawImage(sp.c,-h,-h,h*2,h*2);return;}
+    drawPlanetVec(g,look,R,seed);
+  }
+  function drawPlanetVec(g,look,R,seed){
+    const L=LOOK[look];
     g.save();
     let gr=g.createRadialGradient(-R*.35,-R*.4,R*.05,0,0,R);gr.addColorStop(0,L.a);gr.addColorStop(.55,L.b);gr.addColorStop(1,L.c);
-    g.fillStyle=gr;g.beginPath();g.arc(0,0,R,0,7);g.fill();
-    g.save();g.beginPath();g.arc(0,0,R,0,7);g.clip();
-    if(L.bands){for(let i=0;i<9;i++){const y=-R+R*2*(i+.5)/9+(rnd()-.5)*R*.12;g.fillStyle=L.bands[i%L.bands.length];g.beginPath();g.ellipse(0,y,R*1.2,R*(.05+rnd()*.07),-.08,0,7);g.fill();}}
-    if(look==='earth'){
-      /* 大陆：平滑的不规则形，颜色压低一点 */
-      for(let i=0;i<7;i++){g.fillStyle=i%3?'rgba(62,122,85,.8)':'rgba(140,122,78,.75)';const cx=(rnd()-.5)*R*1.6,cy=(rnd()-.5)*R*1.5,rr=R*(.16+rnd()*.24),n=12,pts=[];
-        for(let k=0;k<n;k++){const a=k/n*Math.PI*2,q=rr*(.55+rnd()*.7);pts.push([cx+Math.cos(a)*q,cy+Math.sin(a)*q*.8]);}
-        g.beginPath();for(let k=0;k<n;k++){const a=pts[k],b=pts[(k+1)%n],mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2;k?g.quadraticCurveTo(a[0],a[1],mx,my):g.moveTo(mx,my);}g.closePath();g.fill();}
-      g.strokeStyle='rgba(255,255,255,.38)';g.lineCap='round';
-      for(let i=0;i<16;i++){g.lineWidth=R*(.015+rnd()*.03);g.beginPath();const y=(rnd()-.5)*R*1.8,x=(rnd()-.5)*R*1.6;g.moveTo(x,y);g.bezierCurveTo(x+R*.15,y-R*.06,x+R*.3,y+R*.05,x+R*(.35+rnd()*.4),y-R*.02);g.stroke();}
-    }
-    if(look==='moon'){
-      for(let i=0;i<16;i++){const cx=(rnd()-.5)*R*1.8,cy=(rnd()-.5)*R*1.8,rr=R*(.05+rnd()*.16);
-        g.fillStyle='rgba(60,60,58,.28)';g.beginPath();g.arc(cx,cy,rr,0,7);g.fill();
-        g.strokeStyle='rgba(255,255,255,.25)';g.lineWidth=Math.max(.6,rr*.12);g.beginPath();g.arc(cx+rr*.1,cy+rr*.1,rr,Math.PI*.9,Math.PI*1.7);g.stroke();}
-      g.fillStyle='rgba(70,70,70,.25)';g.beginPath();g.ellipse(-R*.2,-R*.15,R*.45,R*.3,.4,0,7);g.fill();
-    }
-    if(look==='mars'){
-      for(let i=0;i<9;i++){g.fillStyle='rgba(90,35,20,'+(.18+rnd()*.2).toFixed(2)+')';g.beginPath();g.ellipse((rnd()-.5)*R*1.5,(rnd()-.3)*R*1.2,R*(.12+rnd()*.3),R*(.05+rnd()*.12),rnd()*3,0,7);g.fill();}
-      g.fillStyle='rgba(255,250,245,.75)';g.beginPath();g.ellipse(-R*.05,-R*.9,R*.32,R*.12,0,0,7);g.fill();
-    }
-    if(look==='teal'){g.strokeStyle='rgba(160,255,200,.45)';g.lineWidth=R*.08;g.beginPath();g.ellipse(0,-R*.82,R*.7,R*.2,0,0,Math.PI);g.stroke();}
-    if(look==='amber'){g.strokeStyle='rgba(90,40,10,.25)';g.lineWidth=Math.max(.6,R*.02);for(let i=-4;i<=4;i++){g.beginPath();g.ellipse(0,0,R*Math.cos(i/5),R,0,0,7);g.stroke();}}
-    /* 背光面 */
+    g.fillStyle=gr;g.beginPath();g.arc(0,0,R,0,TAU);g.fill();
+    g.save();g.beginPath();g.arc(0,0,R,0,TAU);g.clip();
     gr=g.createRadialGradient(-R*.45,-R*.5,R*.2,-R*.1,-R*.1,R*1.35);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(.6,'rgba(3,5,12,.25)');gr.addColorStop(1,'rgba(3,5,12,.88)');
     g.fillStyle=gr;g.fillRect(-R,-R,R*2,R*2);
-    g.restore();
-    /* 大气边 */
-    gr=g.createRadialGradient(0,0,R*.94,0,0,R*1.22);gr.addColorStop(0,'rgba('+L.atm+',.55)');gr.addColorStop(.35,'rgba('+L.atm+',.18)');gr.addColorStop(1,'rgba('+L.atm+',0)');
-    g.fillStyle=gr;g.beginPath();g.arc(0,0,R*1.22,0,7);g.arc(0,0,R*.94,0,7,true);g.fill();
-    g.strokeStyle='rgba('+L.atm+',.65)';g.lineWidth=Math.max(.8,R*.025);g.beginPath();g.arc(0,0,R*.995,Math.PI*1.05,Math.PI*1.75);g.stroke();
-    g.restore();
+    g.restore();g.restore();
   }
+  /* 土星环：很多圈细环，中间留一道卡西尼缝；后半圈画在星球后面，前半圈画在前面 */
   function ring(g,R,front){
-    const rx=R*2.05,ry=R*.5,tilt=-.32;
-    g.save();g.rotate(tilt);
-    const parts=[[1,'rgba(232,196,120,.85)',R*.16],[.86,'rgba(255,228,170,.5)',R*.07],[1.12,'rgba(200,160,90,.45)',R*.08]];
-    parts.forEach(function(p){g.strokeStyle=p[1];g.lineWidth=p[2];g.beginPath();
-      if(front)g.ellipse(0,0,rx*p[0],ry*p[0],0,0,Math.PI);else g.ellipse(0,0,rx*p[0],ry*p[0],0,Math.PI,Math.PI*2);g.stroke();});
+    const tilt=-.32,ry=.24;
+    g.save();g.rotate(tilt);g.lineWidth=Math.max(.5,R*.022);
+    const R2=rng(5);
+    for(let f=1.28;f<2.3;f+=.025){
+      if(f>1.93&&f<1.99)continue;
+      const base=f<1.55?.28:f<1.93?.72:.45,a=base*(.75+R2()*.5),warm=f<1.93?'236,206,150':'214,190,150';
+      g.strokeStyle='rgba('+warm+','+a.toFixed(2)+')';g.beginPath();
+      if(front)g.ellipse(0,0,R*f,R*f*ry,0,0,Math.PI);else g.ellipse(0,0,R*f,R*f*ry,0,Math.PI,TAU);g.stroke();
+    }
+    /* 星球投在环上的影子（光从左上来，影子落在右后方） */
+    if(!front){g.fillStyle='rgba(2,3,8,.55)';g.beginPath();g.ellipse(R*.55,-R*.06,R*.62,R*.2,0,Math.PI,TAU);g.fill();}
     g.restore();
   }
-  /* 一颗星球的贴图（含光环），返回 {c, s:半边长（以 R 为单位）} */
+  /* 一颗星球的贴图（含光环），返回 {c, half:半边长（以 R 为单位）} */
   function planet(look,R,D,seed){
-    const pad=look==='gold'?2.4:1.35,S=Math.ceil(R*pad*2*D),c=cnv(S,S),g=c.getContext('2d');
+    if(look!=='gold'){const sp=sphere(look,R*D,seed||7);return {c:sp.c,half:R*sp.pad};}
+    const pad=2.4,S=Math.ceil(R*pad*2*D),c=cnv(S,S),g=c.getContext('2d');
     g.translate(S/2,S/2);g.scale(D,D);
-    if(look==='gold')ring(g,R,false);
-    drawPlanet(g,look,R,seed);
-    if(look==='gold')ring(g,R,true);
+    ring(g,R,false);
+    const sp=sphere(look,R*D,seed||7),h=R*sp.pad;g.drawImage(sp.c,-h,-h,h*2,h*2);
+    ring(g,R,true);
     return {c:c,half:R*pad};
   }
   /* 远景贴图 */
@@ -203,7 +336,9 @@ const MapArt=(function(){
       const gr=g.createRadialGradient(X(n[0]),Y(n[1]),0,X(n[0]),Y(n[1]),S(n[2]));gr.addColorStop(0,n[3]);gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect(0,0,W,H);});
     return {c:c,x0:-2400,y0:-1800,w:4800,h:3600};
   }
-  return {planet:planet,far:far,blackHole:blackHole,starTile:starTile,deepFog:deepFog,drawPlanet:drawPlanet,LOOK:LOOK};
+  /* 页面一加载就开始在空闲时生成：先星图上的几颗，再是小游戏里才用到的 */
+  warm(['gold','earth','moon','teal','violet','mars','amber']);
+  return {planet:planet,far:far,blackHole:blackHole,starTile:starTile,deepFog:deepFog,drawPlanet:drawPlanet,LOOK:LOOK,warm:warm};
 })();
 
 /* ---------------- 星图本体 ---------------- */
@@ -545,9 +680,9 @@ const PlanetView=(function(){
       return {k:'ch',id:id,ic:'ic-scale',y:C.year,t:C.num+' · '+C.title,s:C.sub,st:st,tag:st==='done'?r.grade:(st==='locked'?'未开启':''),arb:!!C.arbiter};});
     if(w.items)return w.items.map(function(id){const G=GAMES[id],r=S.games[id];
       return {k:'game',id:id,ic:GAME_IC[id]||'ic-star',y:G.year||'',t:G.title,s:G.sub||'',st:r&&r.plays?'done':'open',tag:(r&&G.badge)?G.badge(r):''};});
-    if(w.id==='bench'){const n=Object.keys(S.judge||{}).length;return [
-      {k:'panel',id:'bench',ic:'ic-gavel',y:'今日',t:'每日一案',s:'每天换一个，答完有星尘',st:S.daily&&S.daily.last===todayKey()?'done':'open',tag:''},
-      {k:'panel',id:'bench',ic:'ic-scale',y:n+'/5',t:'五个小案子',s:'抢轨位、沙漠里的返回舱、火星上的旗子……',st:n>=5?'done':'open',tag:''}];}
+    if(w.id==='bench'){const n=Object.keys(S.judge||{}).length,dd=S.daily&&S.daily.last===todayKey();return [
+      {k:'panel',id:'quiz',ic:'ic-gavel',y:dd?('今日 '+(S.daily.score!=null?S.daily.score+'/5':'已判')):'今日',t:'每日速判',s:'五句话判对错，答完看依据',st:dd?'done':'open',tag:''},
+      {k:'panel',id:'bench',ic:'ic-scale',y:n+'/5',t:'五个小案子',s:'没有标准答案，只记你的裁判偏向',st:n>=5?'done':'open',tag:''}];}
     if(w.id==='station')return [
       {k:'arch',id:'me',ic:'ic-file',y:'',t:'我的档案',s:'结案记录与裁判偏向',st:'open'},
       {k:'arch',id:'laws',ic:'ic-law',y:S.laws.length+'/'+LAWS.length,t:'法典',s:'办一个案子，记一条法',st:'open'},
@@ -592,7 +727,7 @@ const PlanetView=(function(){
     SFX.tap();
     if(k==='ch'){if(chState(id)==='locked'){SFX.error();toast('先完成上一章。');return;}startChapter(id);return;}
     if(k==='game'){Games.open(id);return;}
-    if(k==='panel'){Panels.open('bench');return;}
+    if(k==='panel'){Panels.open(id);return;}
     if(k==='arch'){Panels.open('archive',id);return;}
   }
   /* 背景：星空画一次；星球弧面单独一块画布，降落时用 CSS 从下往上升起（不占每帧绘制） */
@@ -607,7 +742,7 @@ const PlanetView=(function(){
     const vis=H*(W/H<.95?.17:.22),R=Math.max(W,H)*1.7,Hg=Math.round(vis+R*.075+12),cx=W*.5,cy=Hg+R-vis,top=cy-R;
     gc.width=Math.round(W*D);gc.height=Math.round(Hg*D);gc.style.height=Hg+'px';gg.setTransform(D,0,0,D,0,0);gg.clearRect(0,0,W,Hg);
     const gl=gg.createRadialGradient(cx,cy,R*.985,cx,cy,R*1.06);gl.addColorStop(0,'rgba('+L.atm+',.55)');gl.addColorStop(.3,'rgba('+L.atm+',.18)');gl.addColorStop(1,'rgba('+L.atm+',0)');
-    gg.fillStyle=gl;gg.beginPath();gg.arc(cx,cy,R*1.06,0,7);gg.arc(cx,cy,R*.985,0,7,true);gg.fill();
+    gg.fillStyle=gl;gg.beginPath();gg.arc(cx,cy,R*1.06,0,Math.PI*2);gg.arc(cx,cy,R*.985,0,Math.PI*2,true);gg.fill();
     gg.save();gg.translate(cx,cy);MapArt.drawPlanet(gg,w.look,R,23);gg.restore();
     const dk=gg.createLinearGradient(0,top,0,top+vis*.9);dk.addColorStop(0,'rgba(3,5,11,.25)');dk.addColorStop(1,'rgba(3,5,11,.86)');
     gg.fillStyle=dk;gg.beginPath();gg.arc(cx,cy,R,0,7);gg.fill();

@@ -14,14 +14,39 @@ GAMES.sling=(function(){
   function start(host,api,lvArg){
     const rec=SAVE.game('sling'),lvI=clamp(lvArg==null?Math.min(rec.level||0,LV.length-1):lvArg,0,LV.length-1),L=LV[lvI];
     const C=stageCanvas(host),ctx=C.ctx,W=C.w(),H=C.h();
-    const k=Math.min(W/1000,H/620),ox=(W-1000*k)/2,oy=(H-620*k)/2;
-    const X=function(x){return ox+x*k;},Y=function(y){return oy+y*k;};
+    /* 竖屏时把棋盘转过来铺满：起点在左下，目标在右上（物理不变，只换画法和触点换算） */
+    const PORT=H>W*1.15,k=PORT?Math.min(H/1000,W/620):Math.min(W/1000,H/620),ox=PORT?(W-620*k)/2:(W-1000*k)/2,oy=PORT?(H-1000*k)/2:(H-620*k)/2;
+    const P=PORT?function(x,y){return [ox+(620-y)*k,oy+(1000-x)*k];}:function(x,y){return [ox+x*k,oy+y*k];};
+    const VEC=PORT?function(x,y){return [-y,-x];}:function(x,y){return [x,y];};
     const bg=GameArt.sky(W,H,{seed:31+lvI,tint:['#02030A','#0A0F22'],band:{x:.55,y:.5,a:-.42+lvI*.15,w:.14,al:.12},neb:[[.85,.2,.5,['120,70,170','60,120,180','150,80,120','70,90,190'][lvI],.12],[.3,.85,.45,'60,90,170',.08]]});
     /* 小行星带：按墙的范围预先撒好石头 */
     const rocks=(L.wall||[]).map(function(w){const R=rng(w[0]*7+w[1]),list=[];const n=Math.round(w[2]*w[3]/140);
-      for(let i=0;i<n;i++){const r=(2.5+Math.pow(R(),2)*8)*k,pts=[];for(let j=0;j<7;j++){const a=j/7*6.283;pts.push([Math.cos(a)*r*(.7+R()*.45),Math.sin(a)*r*(.7+R()*.45)]);}list.push({x:X(w[0]+4+R()*(w[2]-8)),y:Y(w[1]+4+R()*(w[3]-8)),r:r,pts:pts,rot:R()*6,vr:(R()-.5)*.6});}
+      for(let i=0;i<n;i++){const r=(2.5+Math.pow(R(),2)*8)*k,pts=[];for(let j=0;j<7;j++){const a=j/7*6.283;pts.push([Math.cos(a)*r*(.7+R()*.45),Math.sin(a)*r*(.7+R()*.45)]);}const q=P(w[0]+4+R()*(w[2]-8),w[1]+4+R()*(w[3]-8));list.push({x:q[0],y:q[1],r:r,pts:pts,rot:R()*6,vr:(R()-.5)*.6});}
       return list;});
     const trailCol='150,205,255';
+    /* 不动的东西（星空、太阳的光、小行星带、行星、引力圈、地球、名字）在开局时画一次 */
+    const stat=document.createElement('canvas');stat.width=C.c.width;stat.height=C.c.height;(function(){
+      const g=stat.getContext('2d');g.scale(stat.width/W,stat.height/H);g.drawImage(bg,0,0,W,H);
+      g.globalCompositeOperation='lighter';GameArt.soft(g,...P(-90,310),420*k,'255,190,120',.28);GameArt.soft(g,...P(-90,310),180*k,'255,220,160',.3);g.globalCompositeOperation='source-over';
+      (L.wall||[]).forEach(function(w,i){
+        GameArt.soft(g,...P(w[0]+w[2]/2,w[1]+w[3]/2),Math.max(w[2],w[3])*k*.75,'200,170,140',.08);
+        rocks[i].forEach(function(r){g.save();g.translate(r.x,r.y);g.rotate(r.rot);
+          const q=g.createLinearGradient(-r.r,-r.r,r.r,r.r);q.addColorStop(0,'#B8AFA2');q.addColorStop(.6,'#6E6760');q.addColorStop(1,'#2E2A27');g.fillStyle=q;
+          g.beginPath();r.pts.forEach(function(p,j){j?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]);});g.closePath();g.fill();g.restore();});
+      });
+      const tg=L.target,tq=P(tg[0],tg[1]),tx=tq[0],ty=tq[1],tr=tg[2]*k;
+      GameArt.soft(g,tx,ty,tr*1.6,'246,195,91',.18);
+      if(lvI===0)GameArt.drawPlanet(g,'mars',tx,ty,tr*.42,4);
+      g.strokeStyle='rgba(246,195,91,.3)';g.lineWidth=6;g.beginPath();g.arc(tx,ty,tr,0,Math.PI*2);g.stroke();
+      GameArt.caption(g,lvI===0?'火星':lvI===3?'星际空间':'目标',tx,ty-tr-14,{size:12,color:'#F6D58E',bg:.45});
+      L.pl.forEach(function(pl){
+        const pq=P(pl.x,pl.y),px=pq[0],py=pq[1],pr=pl.r*k;
+        g.strokeStyle='rgba(150,190,255,.10)';g.lineWidth=1;g.setLineDash([2,5]);[2.2,3.4,4.8].forEach(function(f){g.beginPath();g.arc(px,py,pr*f*Math.sqrt(pl.m),0,Math.PI*2);g.stroke();});g.setLineDash([]);
+        GameArt.drawPlanet(g,pl.look,px,py,pr,pl.x);
+        GameArt.caption(g,pl.n,px,py+pr*(pl.look==='gold'?1.6:1)+16,{size:11,bg:.4,line:.12});
+      });
+      GameArt.drawPlanet(g,'earth',...P(L.start[0],L.start[1]),12*k,3);
+    })();
     const st={p:null,v:null,flying:false,trail:[],tries:0,aim:null,t:0,done:false,boom:0,anim:0};
     function reset(){st.p={x:L.start[0],y:L.start[1]};st.v={x:0,y:0};st.flying=false;st.trail=[];st.t=0;st.assist={};}
     reset();
@@ -29,7 +54,7 @@ GAMES.sling=(function(){
     function accel(p){let ax=0,ay=0;L.pl.forEach(function(pl){const dx=pl.x-p.x,dy=pl.y-p.y,d2=dx*dx+dy*dy+400,d=Math.sqrt(d2),f=pl.m*42000/d2;ax+=f*dx/d;ay+=f*dy/d;});return {x:ax,y:ay};}
     function hitWall(p){return (L.wall||[]).some(function(w){return p.x>w[0]&&p.x<w[0]+w[2]&&p.y>w[1]&&p.y<w[1]+w[3];});}
     function step(p,v,dt){const a=accel(p);v.x+=a.x*dt;v.y+=a.y*dt;p.x+=v.x*dt;p.y+=v.y*dt;}
-    function toWorld(e){const r=C.c.getBoundingClientRect();return {x:(e.clientX-r.left-ox)/k,y:(e.clientY-r.top-oy)/k};}
+    function toWorld(e){const r=C.c.getBoundingClientRect(),sx=e.clientX-r.left,sy=e.clientY-r.top;return PORT?{x:1000-(sy-oy)/k,y:620-(sx-ox)/k}:{x:(sx-ox)/k,y:(sy-oy)/k};}
     C.c.addEventListener('pointerdown',function(e){if(st.flying||st.done)return;st.aim={s:toWorld(e),c:toWorld(e)};C.c.setPointerCapture(e.pointerId);});
     C.c.addEventListener('pointermove',function(e){if(st.aim)st.aim.c=toWorld(e);});
     C.c.addEventListener('pointerup',function(){
@@ -46,55 +71,37 @@ GAMES.sling=(function(){
         /* 擦着行星飞过：亮一圈，提示这就是“借力” */
         L.pl.forEach(function(pl,i){if(st.assist[i]==null&&Math.hypot(st.p.x-pl.x,st.p.y-pl.y)<pl.r*2.6){st.assist[i]=0;SFX.whoosh();buzz(8);}});
         const tg=L.target;
-        if(Math.hypot(st.p.x-tg[0],st.p.y-tg[1])<tg[2]){st.flying=false;st.done=true;SFX.ok();FX.sparkle(X(tg[0]),Y(tg[1]),'#F6C35B',30);setTimeout(win,700);}
+        if(Math.hypot(st.p.x-tg[0],st.p.y-tg[1])<tg[2]){st.flying=false;st.done=true;SFX.ok();FX.sparkle(...P(tg[0],tg[1]),'#F6C35B',30);setTimeout(win,700);}
         else if(L.pl.some(function(pl){return Math.hypot(st.p.x-pl.x,st.p.y-pl.y)<pl.r;})||hitWall(st.p)){st.flying=false;st.boom=.6;SFX.drop();buzz(30);setTimeout(reset,700);}
         else if(st.p.x<-60||st.p.x>1060||st.p.y<-60||st.p.y>680||st.t>14){st.flying=false;SFX.drop();setTimeout(reset,300);}
       }
-      ctx.drawImage(bg,0,0,W,H);
-      /* 太阳在画面左侧外，留一道暖光 */
-      ctx.globalCompositeOperation='lighter';GameArt.soft(ctx,X(-90),Y(310),420*k,'255,190,120',.28);GameArt.soft(ctx,X(-90),Y(310),180*k,'255,220,160',.3);ctx.globalCompositeOperation='source-over';
-      /* 小行星带 */
-      (L.wall||[]).forEach(function(w,i){
-        GameArt.soft(ctx,X(w[0]+w[2]/2),Y(w[1]+w[3]/2),Math.max(w[2],w[3])*k*.75,'200,170,140',.08);
-        rocks[i].forEach(function(r){r.rot+=r.vr*dt;ctx.save();ctx.translate(r.x,r.y);ctx.rotate(r.rot);
-          const q=ctx.createLinearGradient(-r.r,-r.r,r.r,r.r);q.addColorStop(0,'#B8AFA2');q.addColorStop(.6,'#6E6760');q.addColorStop(1,'#2E2A27');ctx.fillStyle=q;
-          ctx.beginPath();r.pts.forEach(function(p,j){j?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]);});ctx.closePath();ctx.fill();ctx.restore();});
+      ctx.drawImage(stat,0,0,W,H);
+      /* 目标：虚线环在转 */
+      const tg=L.target,tq=P(tg[0],tg[1]),tx=tq[0],ty=tq[1],tr=tg[2]*k;
+      if(lvI===3){ctx.strokeStyle='rgba(140,200,255,.35)';ctx.lineWidth=1.2;for(let i=0;i<3;i++){ctx.beginPath();ctx.arc(tx+tr*2.2,ty-tr*.6,tr*(2.2+i*.35)+Math.sin(st.anim*1.5+i)*2,Math.PI*.55,Math.PI*1.05);ctx.stroke();}}
+      ctx.strokeStyle='rgba(246,195,91,.9)';ctx.lineWidth=1.6;ctx.setLineDash([5,7]);ctx.lineDashOffset=-st.anim*12;ctx.beginPath();ctx.arc(tx,ty,tr,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+      /* 借力时那颗行星亮一圈 */
+      L.pl.forEach(function(pl,ai){
+        const at=st.assist[ai];if(at==null||at>=1.2)return;
+        const pq=P(pl.x,pl.y),px=pq[0],py=pq[1],pr=pl.r*k;st.assist[ai]=at+dt;const f=at/1.2;
+        ctx.strokeStyle='rgba(150,205,255,'+(1-f).toFixed(2)+')';ctx.lineWidth=2;ctx.beginPath();ctx.arc(px,py,pr*(1.3+f*1.6),0,Math.PI*2);ctx.stroke();
+        ctx.globalAlpha=1-f;GameArt.glowText(ctx,'借力',px,py-pr*(1.4+f)-12,14,'#9FD3FF',10);ctx.globalAlpha=1;
       });
-      /* 目标 */
-      const tg=L.target,tx=X(tg[0]),ty=Y(tg[1]),tr=tg[2]*k;
-      GameArt.soft(ctx,tx,ty,tr*1.6,'246,195,91',.18);
-      if(lvI===0)GameArt.drawPlanet(ctx,'mars',tx,ty,tr*.42,4);
-      else if(lvI===3){ctx.strokeStyle='rgba(140,200,255,.35)';ctx.lineWidth=1.2;for(let i=0;i<3;i++){ctx.beginPath();ctx.arc(tx+tr*2.2,ty-tr*.6,tr*(2.2+i*.35)+Math.sin(st.anim*1.5+i)*2,Math.PI*.55,Math.PI*1.05);ctx.stroke();}}
-      ctx.strokeStyle='rgba(246,195,91,.9)';ctx.lineWidth=1.6;ctx.setLineDash([5,7]);ctx.lineDashOffset=-st.anim*12;ctx.beginPath();ctx.arc(tx,ty,tr,0,7);ctx.stroke();ctx.setLineDash([]);
-      ctx.strokeStyle='rgba(246,195,91,.3)';ctx.lineWidth=6;ctx.beginPath();ctx.arc(tx,ty,tr,0,7);ctx.stroke();
-      GameArt.caption(ctx,lvI===0?'火星':lvI===3?'星际空间':'目标',tx,ty-tr-14,{size:12,color:'#F6D58E',bg:.45});
-      /* 行星和引力范围 */
-      L.pl.forEach(function(pl){
-        const px=X(pl.x),py=Y(pl.y),pr=pl.r*k;
-        ctx.strokeStyle='rgba(150,190,255,.10)';ctx.lineWidth=1;[2.2,3.4,4.8].forEach(function(f,i){ctx.setLineDash([2,5]);ctx.lineDashOffset=st.anim*(4-i);ctx.beginPath();ctx.arc(px,py,pr*f*Math.sqrt(pl.m),0,7);ctx.stroke();});ctx.setLineDash([]);
-        GameArt.drawPlanet(ctx,pl.look,px,py,pr,pl.x);
-        const ai=L.pl.indexOf(pl),at=st.assist[ai];
-        if(at!=null&&at<1.2){st.assist[ai]=at+dt;const f=at/1.2;ctx.strokeStyle='rgba(150,205,255,'+(1-f).toFixed(2)+')';ctx.lineWidth=2;ctx.beginPath();ctx.arc(px,py,pr*(1.3+f*1.6),0,7);ctx.stroke();
-          ctx.globalAlpha=1-f;GameArt.glowText(ctx,'借力',px,py-pr*(1.4+f)-12,14,'#9FD3FF',10);ctx.globalAlpha=1;}
-        GameArt.caption(ctx,pl.n,px,py+pr*(pl.look==='gold'?1.6:1)+16,{size:11,bg:.4,line:.12});
-      });
-      /* 地球 */
-      GameArt.drawPlanet(ctx,'earth',X(L.start[0]),Y(L.start[1]),12*k,3);
       /* 轨迹：越早的越淡 */
       if(st.trail.length>1){ctx.lineCap='round';const n=st.trail.length;
-        for(let i=1;i<n;i+=3){const a=st.trail[i-1],b=st.trail[Math.min(n-1,i+2)],f=i/n;ctx.strokeStyle='rgba('+trailCol+','+(.15+f*.7).toFixed(2)+')';ctx.lineWidth=1+f*1.8;ctx.beginPath();ctx.moveTo(X(a.x),Y(a.y));ctx.lineTo(X(b.x),Y(b.y));ctx.stroke();}}
+        for(let i=1;i<n;i+=3){const a=st.trail[i-1],b=st.trail[Math.min(n-1,i+2)],f=i/n;ctx.strokeStyle='rgba('+trailCol+','+(.15+f*.7).toFixed(2)+')';ctx.lineWidth=1+f*1.8;ctx.beginPath();ctx.moveTo(...P(a.x,a.y));ctx.lineTo(...P(b.x,b.y));ctx.stroke();}}
       /* 瞄准与预测 */
       if(st.aim){const v=launchV(),p={x:st.p.x,y:st.p.y},vv={x:v.x,y:v.y},N=Math.round(40*L.pred);
-        for(let i=0;i<N;i++){for(let j=0;j<3;j++)step(p,vv,1/120);if(i%2===0)GameArt.soft(ctx,X(p.x),Y(p.y),4,'246,195,91',1-i/N*.8);}
+        for(let i=0;i<N;i++){for(let j=0;j<3;j++)step(p,vv,1/120);if(i%2===0)GameArt.soft(ctx,...P(p.x,p.y),4,'246,195,91',1-i/N*.8);}
         const pw=Math.min(1,Math.hypot(st.aim.s.x-st.aim.c.x,st.aim.s.y-st.aim.c.y)/160);
-        ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=1.5;ctx.setLineDash([3,4]);ctx.beginPath();ctx.moveTo(X(st.p.x),Y(st.p.y));ctx.lineTo(X(st.aim.c.x),Y(st.aim.c.y));ctx.stroke();ctx.setLineDash([]);
-        ctx.strokeStyle='rgba(246,195,91,.9)';ctx.lineWidth=3;ctx.beginPath();ctx.arc(X(st.p.x),Y(st.p.y),18,-1.5708,-1.5708+6.283*pw);ctx.stroke();}
+        ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=1.5;ctx.setLineDash([3,4]);ctx.beginPath();ctx.moveTo(...P(st.p.x,st.p.y));ctx.lineTo(...P(st.aim.c.x,st.aim.c.y));ctx.stroke();ctx.setLineDash([]);
+        ctx.strokeStyle='rgba(246,195,91,.9)';ctx.lineWidth=3;ctx.beginPath();ctx.arc(...P(st.p.x,st.p.y),18,-1.5708,-1.5708+6.283*pw);ctx.stroke();}
       /* 探测器：碟形天线朝后，顺着速度方向 */
-      if(st.boom>0){st.boom-=dt;ctx.globalCompositeOperation='lighter';GameArt.soft(ctx,X(st.p.x),Y(st.p.y),(1-st.boom)*50+10,'255,180,94',st.boom*1.4);ctx.globalCompositeOperation='source-over';}
+      if(st.boom>0){st.boom-=dt;ctx.globalCompositeOperation='lighter';GameArt.soft(ctx,...P(st.p.x,st.p.y),(1-st.boom)*50+10,'255,180,94',st.boom*1.4);ctx.globalCompositeOperation='source-over';}
       else{
-        const ang=st.flying?Math.atan2(st.v.y,st.v.x):st.aim?Math.atan2(st.aim.s.y-st.aim.c.y,st.aim.s.x-st.aim.c.x):-.3;
-        if(st.flying)GameArt.soft(ctx,X(st.p.x),Y(st.p.y),12,trailCol,.7);
-        ctx.save();ctx.translate(X(st.p.x),Y(st.p.y));ctx.rotate(ang);const ps=Math.max(.8,k*1.1);ctx.scale(ps,ps);
+        const dv=st.flying?VEC(st.v.x,st.v.y):st.aim?VEC(st.aim.s.x-st.aim.c.x,st.aim.s.y-st.aim.c.y):VEC(1,-.3),ang=Math.atan2(dv[1],dv[0]);
+        if(st.flying)GameArt.soft(ctx,...P(st.p.x,st.p.y),12,trailCol,.7);
+        ctx.save();ctx.translate(...P(st.p.x,st.p.y));ctx.rotate(ang);const ps=Math.max(.8,k*1.1);ctx.scale(ps,ps);
         ctx.strokeStyle='rgba(220,225,235,.8)';ctx.lineWidth=.8;ctx.beginPath();ctx.moveTo(-2,0);ctx.lineTo(-2,-11);ctx.moveTo(2,2);ctx.lineTo(9,7);ctx.stroke();
         ctx.fillStyle='#C99A48';ctx.beginPath();for(let i=0;i<6;i++){const a=i/6*6.283;i?ctx.lineTo(Math.cos(a)*3.6,Math.sin(a)*3.6):ctx.moveTo(Math.cos(a)*3.6,Math.sin(a)*3.6);}ctx.closePath();ctx.fill();
         const q=ctx.createLinearGradient(-9,-7,-5,7);q.addColorStop(0,'#FFFFFF');q.addColorStop(1,'#8E96A6');ctx.fillStyle=q;ctx.beginPath();ctx.ellipse(-6,0,2.4,7.5,0,0,7);ctx.fill();

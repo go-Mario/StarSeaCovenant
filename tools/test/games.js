@@ -46,9 +46,10 @@ const SETS=eval('('+relaxSrc.match(/const SETS=(\[[\s\S]*?\n  \]);/)[1]+')');
       for(let t=0;t<40&&!(await resultOn());t++){await p.keyboard.down('ArrowUp');await p.waitForTimeout(t%3===0?400:150);await p.keyboard.up('ArrowUp');await p.waitForTimeout(250);if(t===6)await p.screenshot({path:OUT+'/'+id+'-2-play.png'});}
     }else if(id==='sling'){
       const cv=await p.$('#gmStage canvas');const bb=await cv.boundingBox();
-      const k=Math.min(bb.width/1000,bb.height/620);const cx=bb.x+bb.width/2,cy=bb.y+bb.height/2;
-      const ang=353*Math.PI/180,pw=85*k;
-      await drag(cx,cy,cx-Math.cos(ang)*pw,cy-Math.sin(ang)*pw,10);
+      /* 竖屏时棋盘是转过来画的：世界里的拖动方向 (dx,dy) 在屏幕上是 (-dy,-dx) */
+      const port=bb.height>bb.width*1.15,k=port?Math.min(bb.height/1000,bb.width/620):Math.min(bb.width/1000,bb.height/620);const cx=bb.x+bb.width/2,cy=bb.y+bb.height/2;
+      const ang=353*Math.PI/180,wx=-Math.cos(ang)*85,wy=-Math.sin(ang)*85,sx=port?-wy*k:wx*k,sy=port?-wx*k:wy*k;
+      await drag(cx,cy,cx+sx,cy+sy,10);
       await p.waitForTimeout(500);await p.screenshot({path:OUT+'/'+id+'-2-play.png'});
     }else if(id==='orbit'||id==='station'){
       for(let t=0;t<60&&!(await resultOn());t++){await p.mouse.click(vs.width*(.3+Math.random()*.4),vs.height*(.4+Math.random()*.3));await p.waitForTimeout(id==='station'?900:300);if(t===4)await p.screenshot({path:OUT+'/'+id+'-2-play.png'});}

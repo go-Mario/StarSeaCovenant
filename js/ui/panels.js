@@ -4,7 +4,7 @@
    裁判练习、休憩舱、史实卡、形象设置
    ===================================================================== */
 const Panels=(function(){
-  let cur='',tab='me',benchCur=null,benchDaily=false;
+  let cur='',tab='me',benchCur=null,qz=null,qzT=0;
   function shell(title,body,tabs){
     const p=byId('panel');
     p.innerHTML='<div class="pn-sheet paper"><div class="pn-head"><button class="pn-back" id="pnBack">'+icon('ic-back')+'</button><h2>'+title+'</h2></div>'+
@@ -13,9 +13,9 @@ const Panels=(function(){
     byId('pnBack').onclick=function(){SFX.tap();close();};
     $$('#panel [data-tab]').forEach(function(b){b.onclick=function(){SFX.tap();tab=b.getAttribute('data-tab');render();};});
   }
-  function close(){byId('panel').classList.remove('on');cur='';Hub.refresh();}
+  function close(){stopQuizTimer();byId('panel').classList.remove('on');cur='';qz=null;Hub.refresh();}
   function render(){
-    if(cur==='archive')archive();else if(cur==='bench')bench();else if(cur==='relax')relax();
+    if(cur==='archive')archive();else if(cur==='bench')bench();else if(cur==='quiz')quiz();else if(cur==='relax')relax();
   }
   /* ---------------- 档案馆 ---------------- */
   const TABS=[['me','档案'],['laws','法典'],['precs','先例'],['hist','史实'],['achs','成就'],['shop','小卖部'],['set','设置']];
@@ -105,42 +105,134 @@ const Panels=(function(){
   function bench(){
     let b='';
     if(!benchCur){
-      b+='<div class="muted small">五个已经结案的小案子，卷宗发给你来裁。<b>不打分</b>，三个选项都说得通，现行法只是其中一条路。你的选择会记成“裁判偏向”，第四章的对手会来翻。</div>';
+      b+='<div class="muted small">五个已经结案的小案子，卷宗发给你来裁。<b>不打分</b>，三个选项都说得通，现行法只是其中一条路。你的选择会记成“裁判偏向”，第四章的对手会来翻。想考考条文本身，去旁边的“每日速判”。</div>';
       b+='<h3>你的偏向</h3>'+leanChart();
-      const dk=todayKey(),daily=BENCH[dayHash()%BENCH.length],dd=S.daily.last===dk;
-      b+='<button class="row-item daily" data-bench="'+daily.id+'" data-daily="1"><span class="ri-y">今日</span><span class="ri-t">每日一案 · '+daily.title+'</span><span class="ri-r">'+(dd?'<span class="chip ok">已完成</span>':'<span class="chip amber">星尘 +8</span>')+'</span></button>';
       b+='<h3>五个案子</h3>'+BENCH.map(function(p){const s=S.judge[p.id];const L=s?LEAN[p.lean[s.ch]]:null;return '<button class="row-item" data-bench="'+p.id+'"><span class="ri-t">'+p.title+'</span><span class="ri-r">'+(L?'<span class="chip" style="color:'+L.c+'">'+L.n+'</span>':'<span class="muted small">待裁</span>')+'</span></button>';}).join('');
     }else{
-      const p=BENCH_BY[benchCur],s=S.judge[p.id],dk=todayKey(),doneToday=benchDaily&&S.daily.last===dk;
+      const p=BENCH_BY[benchCur],s=S.judge[p.id];
       b+='<div class="bench-brief">'+fill(p.brief)+'</div>';
-      const pick=benchDaily?(doneToday?S.daily.ch:null):(s?s.ch:null);
+      const pick=s?s.ch:null;
       b+='<h3>你的裁决</h3>'+p.opts.map(function(o,i){return '<button class="bench-opt'+(pick===i?' on':'')+'" data-opt="'+i+'"><b>'+String.fromCharCode(65+i)+'</b>'+fill(o)+'</button>';}).join('');
       if(pick!=null){
         const L=LEAN[p.lean[pick]];
         b+='<div class="bench-res"><div><span class="chip" style="color:'+L.c+'">'+L.n+'</span>'+L.d+'</div><div class="br-after"><b>此后</b>'+p.after[pick]+'</div>'+
           '<div class="br-law"><b>现行法的立场</b>'+(pick===p.ans?'<span class="chip ok">和你一致</span>':'<span class="chip amber">和你不同</span>')+'<div>'+fill(p.why)+'</div></div></div>';
-        if(!benchDaily)b+='<div class="muted small">改主意了？再选一次就行，偏向会跟着变。</div>';
+        b+='<div class="muted small">改主意了？再选一次就行，偏向会跟着变。</div>';
       }
       b+='<div class="btnrow"><button class="btn ghost" id="bnBack">回到列表</button></div>';
     }
-    shell(benchCur?(benchDaily?'每日一案':'裁判练习 · '+BENCH_BY[benchCur].title):'裁判练习',b);
-    $$('#panel [data-bench]').forEach(function(x){x.onclick=function(){SFX.page();benchCur=x.getAttribute('data-bench');benchDaily=!!x.getAttribute('data-daily');bench();};});
+    shell(benchCur?'裁判练习 · '+BENCH_BY[benchCur].title:'裁判练习',b);
+    $$('#panel [data-bench]').forEach(function(x){x.onclick=function(){SFX.page();benchCur=x.getAttribute('data-bench');bench();};});
     $$('#panel [data-opt]').forEach(function(x){x.onclick=function(e){if(e.target.closest('.term'))return;answer(+x.getAttribute('data-opt'));};});
     const bb=byId('bnBack');if(bb)bb.onclick=function(){SFX.tap();benchCur=null;bench();};
   }
   function answer(i){
     const p=BENCH_BY[benchCur];
-    if(benchDaily){
-      const dk=todayKey();if(S.daily.last===dk){toast('今天的已经做过了，明天再来。');return;}
-      const y=new Date(Date.now()-86400000),yk=y.getFullYear()+'-'+(y.getMonth()+1)+'-'+y.getDate();
-      S.daily.streak=(S.daily.last===yk?(S.daily.streak||0):0)+1;S.daily.last=dk;S.daily.ch=i;S.dust+=8;S.focus=clamp(S.focus+5,0,100);
-      SFX.gavel();toast('每日一案 · 星尘 +8 · 连续 '+S.daily.streak+' 天');
-    }else{
-      const first=!S.judge[p.id];S.judge[p.id]={ch:i};
-      if(first){S.rep+=p.rep;S.dust+=6;unlockLaw(p.law);SFX.gavel();}else SFX.card();
-    }
+    const first=!S.judge[p.id];S.judge[p.id]={ch:i};
+    if(first){S.rep+=p.rep;S.dust+=6;unlockLaw(p.law);SFX.gavel();}else SFX.card();
     save();checkAchs();HUD.refresh();bench();
   }
+  /* ---------------- 每日速判 ----------------
+     五句话判对错，每句限时；答完马上看依据。进度存档，中途退出再进来接着答，不能重来刷分。 */
+  const QN=5,QT=20;
+  function yesterdayKey(){const y=new Date(Date.now()-86400000);return y.getFullYear()+'-'+(y.getMonth()+1)+'-'+y.getDate();}
+  function quizSet(seed){
+    const R=rng(seed),pool=QUIZ.slice(),out=[],cnt={t:0,f:0};
+    for(let i=pool.length-1;i>0;i--){const j=Math.floor(R()*(i+1)),t=pool[i];pool[i]=pool[j];pool[j]=t;}
+    pool.forEach(function(q){if(out.length>=QN)return;const k=q.a?'t':'f';if(cnt[k]>=3)return;cnt[k]++;out.push(q.id);});
+    return out;
+  }
+  function stopQuizTimer(){if(qzT){cancelAnimationFrame(qzT);qzT=0;}}
+  function startQuiz(practice){
+    const dk=todayKey();
+    if(practice)qz={practice:true,ids:quizSet((Date.now()%100000)+11),i:0,res:[]};
+    else{const pg=S.daily.prog;qz=(pg&&pg.d===dk)?{practice:false,ids:pg.ids,i:pg.res.length,res:pg.res.slice()}:{practice:false,ids:quizSet(dayHash()*7+13),i:0,res:[]};}
+    SFX.page();qz.t0=performance.now();quiz();
+  }
+  function quizAnswer(v){
+    if(!qz||qz.res[qz.i]!=null)return;stopQuizTimer();
+    const q=QUIZ_BY[qz.ids[qz.i]],to=v==null,ok=!to&&v===q.a;
+    qz.res[qz.i]={ok:ok,to:to};
+    if(ok){SFX.ok();buzz(10);}else{SFX.error();buzz([30,30,30]);}
+    if(!qz.practice){S.daily.prog={d:todayKey(),ids:qz.ids,res:qz.res.slice()};save();}
+    quiz();
+  }
+  function quizNext(){if(!qz)return;SFX.page();qz.i++;qz.t0=performance.now();if(qz.i>=QN)quizFinish();else quiz();}
+  function quizFinish(){
+    const c=qz.res.filter(function(r){return r.ok;}).length;
+    if(!qz.practice){
+      const dk=todayKey();
+      if(S.daily.last!==dk){
+        S.daily.streak=(S.daily.last===yesterdayKey()?(S.daily.streak||0):0)+1;S.daily.last=dk;
+        S.daily.score=c;S.daily.best=Math.max(S.daily.best||0,c);S.daily.ids=qz.ids;S.daily.res=qz.res.map(function(r){return r.ok?1:0;});delete S.daily.prog;
+        const dust=c*2+(c===QN?4:0);S.dust+=dust;S.focus=clamp(S.focus+5,0,100);qz.dust=dust;
+        save();checkAchs();HUD.refresh();SFX.gavel();if(dust)setTimeout(SFX.coin,250);
+      }
+    }else SFX.card();
+    qz.done=true;quiz();
+  }
+  function quizRows(ids,res){
+    return '<div class="qz-list">'+ids.map(function(id,i){const q=QUIZ_BY[id],ok=res[i]&&(res[i].ok||res[i]===1);
+      return '<details class="qz-row"><summary><i class="'+(ok?'ok':'bad')+'">'+(ok?'✓':'✗')+'</i><span>'+fill(q.s)+'</span><em>'+(q.a?'对':'错')+'</em></summary><div class="qz-why">'+fill(q.why)+'</div></details>';}).join('')+'</div>';
+  }
+  function quiz(){
+    stopQuizTimer();
+    const dk=todayKey(),doneToday=S.daily.last===dk;
+    let b='';
+    if(!qz){
+      b+='<div class="qz-intro"><div class="qz-k">DAILY · '+dk.replace(/-/g,'.')+'</div><div class="qz-lead">五句话，判对还是错。<br>每句 '+QT+' 秒，答完马上看依据。</div>'+
+        '<div class="qz-stats"><div><b>'+(S.daily.streak||0)+'</b><span>连续天数</span></div><div><b>'+(doneToday&&S.daily.score!=null?S.daily.score+'/'+QN:'—')+'</b><span>今天</span></div><div><b>'+(S.daily.best!=null?S.daily.best+'/'+QN:'—')+'</b><span>最好成绩</span></div></div>';
+      if(doneToday){
+        b+=(S.daily.ids?'<h3>今天的五句</h3>'+quizRows(S.daily.ids,S.daily.res||[]):'')+'<div class="muted small">明天换一组新的。想多练几句，可以再来一组，不计奖励。</div><button class="btn ghost block" id="qzPrac">再练一组</button>';
+      }else{
+        const pg=S.daily.prog,mid=pg&&pg.d===dk&&pg.res.length;
+        b+='<button class="btn red block" id="qzGo">'+(mid?'接着答（第 '+(pg.res.length+1)+' 句）':'开始')+'</button><div class="muted small">每答对一句得 2 星尘，全对再加 4；连续三天有成就。</div>';
+      }
+      b+='<div class="qz-note">和“五个小案子”不同：小案子没有标准答案，只记你的裁判偏向；这里每一句都有确定的答案，考的是条文本身。</div></div>';
+      shell('每日速判',b);
+      const g=byId('qzGo');if(g)g.onclick=function(){startQuiz(false);};
+      const pr=byId('qzPrac');if(pr)pr.onclick=function(){startQuiz(true);};
+      return;
+    }
+    const title=qz.practice?'每日速判 · 练习':'每日速判';
+    const dots='<div class="qz-dots">'+qz.ids.map(function(_,i){const r=qz.res[i];return '<i class="'+(r?(r.ok?'ok':'bad'):i===qz.i&&!qz.done?'cur':'')+'"></i>';}).join('')+'</div>';
+    if(qz.done){
+      const c=qz.res.filter(function(r){return r.ok;}).length;
+      b+='<div class="qz-top">'+dots+'</div><div class="qz-end"><div class="qz-score">'+c+'<small>/'+QN+'</small></div><div class="qz-end-t">'+(c===QN?'全部判对':c>=3?'判得不错':'再接再厉')+'</div>'+
+        (qz.practice?'<div class="muted small">练习不计奖励。</div>':'<div class="gm-rw qz-rw">'+(qz.dust?'<span class="chip amber">星尘 +'+qz.dust+'</span>':'')+'<span class="chip ok">精力 +5</span><span class="chip">连续 '+(S.daily.streak||1)+' 天</span></div>')+'</div>';
+      b+=quizRows(qz.ids,qz.res)+'<div class="btnrow"><button class="btn ghost" id="qzPrac">再练一组</button><button class="btn" id="qzClose">合上</button></div>';
+      shell(title,b);
+      byId('qzPrac').onclick=function(){startQuiz(true);};byId('qzClose').onclick=function(){SFX.tap();close();};
+      return;
+    }
+    const q=QUIZ_BY[qz.ids[qz.i]],r=qz.res[qz.i];
+    b+='<div class="qz-top">'+dots+'<div class="qz-time'+(r?' off':'')+'"><i id="qzBar"></i></div></div>';
+    b+='<div class="qz-card'+(r?(r.ok?' ok':' bad'):'')+'" '+(r?'':'style="--qd:'+qz.i+'"')+'><div class="qz-no">第 '+(qz.i+1)+' 句 / 共 '+QN+' 句</div><div class="qz-s">'+fill(q.s)+'</div>';
+    if(!r)b+='</div><div class="qz-btns"><button class="qz-b yes" data-qa="1"><b>对</b><small>← 或 1</small></button><button class="qz-b no" data-qa="0"><b>错</b><small>→ 或 2</small></button></div>';
+    else b+='<div class="qz-verdict"><span class="stamp">'+(r.to?'超时':r.ok?'判对了':'判错了')+'</span><em>这句话是<b>'+(q.a?'对':'错')+'</b>的</em></div><div class="qz-why">'+fill(q.why)+'</div></div>'+
+      '<button class="btn block qz-next" id="qzNext">'+(qz.i<QN-1?'下一句':'看结果')+'</button>';
+    shell(title,b);
+    $$('#panel [data-qa]').forEach(function(x){x.onclick=function(){quizAnswer(x.getAttribute('data-qa')==='1');};});
+    const nx=byId('qzNext');if(nx)nx.onclick=quizNext;
+    if(!r){
+      const bar=byId('qzBar');
+      const tick=function(){const left=1-(performance.now()-qz.t0)/1000/QT;if(left<=0){quizAnswer(null);return;}
+        if(bar){bar.style.transform='scaleX('+left.toFixed(4)+')';bar.parentNode.classList.toggle('low',left<.25);}qzT=requestAnimationFrame(tick);};
+      qzT=requestAnimationFrame(tick);
+    }
+  }
+  /* 切到后台时倒计时暂停，回来接着算，不会一回来就超时 */
+  document.addEventListener('visibilitychange',function(){
+    if(!qz||qz.done)return;
+    if(document.hidden)qz.hid=performance.now();else if(qz.hid){qz.t0+=performance.now()-qz.hid;qz.hid=0;}
+  });
+  addEventListener('keydown',function(e){
+    if(cur!=='quiz'||!qz||qz.done)return;
+    const r=qz.res[qz.i];
+    if(!r&&(e.key==='ArrowLeft'||e.key==='1'||e.key==='y')){e.preventDefault();quizAnswer(true);}
+    else if(!r&&(e.key==='ArrowRight'||e.key==='2'||e.key==='n')){e.preventDefault();quizAnswer(false);}
+    else if(r&&(e.key==='Enter'||e.key===' ')){e.preventDefault();quizNext();}
+  });
   /* ---------------- 休憩舱 ---------------- */
   function relax(){
     let b='<div class="rx-top"><div class="rx-focus"><span>精力</span><i><b style="width:'+S.focus+'%"></b></i><em>'+S.focus+'</em></div>'+
@@ -151,7 +243,7 @@ const Panels=(function(){
     $$('#panel [data-rx]').forEach(function(x){x.onclick=function(){SFX.tap();byId('panel').classList.remove('on');cur='';Games.open(x.getAttribute('data-rx'));};});
   }
   return {
-    open(name,t){cur=name;if(t)tab=t;if(name==='bench'){benchCur=null;}SFX.page();render();},
+    open(name,t){stopQuizTimer();cur=name;if(t)tab=t;if(name==='bench'){benchCur=null;}if(name==='quiz')qz=null;SFX.page();render();},
     refresh(){if(cur)render();},close:close,history:history
   };
 })();
