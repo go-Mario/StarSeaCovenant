@@ -57,7 +57,7 @@ const Games=(function(){
       (r.big?'<div class="gm-big">'+r.big+'</div>':'')+(newBest&&rec.plays>1?'<div class="chip amber">新纪录</div>':'')+
       '<div class="gm-rw">'+(dust?'<span class="chip amber">星尘 +'+dust+'</span>':'')+(focus?'<span class="chip ok">精力 +'+focus+'</span>':'')+'</div>'+
       (r.note?'<div class="gm-fact">'+fill(r.note)+'</div>':'')+
-      '<div class="btnrow"><button class="btn ghost" id="gmAgain">'+(r.againLabel||'再来一局')+'</button><button class="btn" id="gmDone">回到长卷</button></div></div>';
+      '<div class="btnrow"><button class="btn ghost" id="gmAgain">'+(r.againLabel||'再来一局')+'</button><button class="btn" id="gmDone">回到星图</button></div></div>';
     box.classList.add('on');
     if(dust)SFX.coin();
     byId('gmAgain').onclick=function(){SFX.tap();box.classList.remove('on');if(r.again)r.again();else start(r.lv);};

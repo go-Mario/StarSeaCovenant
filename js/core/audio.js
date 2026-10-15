@@ -85,16 +85,16 @@ function pentaNote(i,base){const o=Math.floor(i/5),k=((i%5)+5)%5;return (base||6
 
 let lastVoiceT=0;
 const SFX={
-  tap(){noiseHit(.05,3200,.02,0,.05,'bandpass',1.2);beep(1250,.03,'sine',.03,0,0,.04);},
-  card(){noiseHit(.06,1400,.09,-.1,.12,'bandpass',.9,0,3600);},
-  page(){noiseHit(.05,900,.22,.1,.16,'bandpass',.7,0,3200);noiseHit(.03,2400,.08,.15,.1,'bandpass',1,.12);},
+  tap(){noiseHit(.12,3200,.02,0,.05,'bandpass',1.2);beep(1250,.03,'sine',.07,0,0,.04);},
+  card(){noiseHit(.13,1400,.09,-.1,.12,'bandpass',.9,0,3600);},
+  page(){noiseHit(.11,900,.22,.1,.16,'bandpass',.7,0,3200);noiseHit(.07,2400,.08,.15,.1,'bandpass',1,.12);},
   voice(who){
     if(!S.sound)return;const c=ac();if(!c)return;if(c.currentTime-lastVoiceT<.045)return;lastVoiceT=c.currentTime;
     const v=(typeof voiceOf==='function'&&voiceOf(who))||[440,'triangle'];
     const t=c.currentTime,f=v[0]*(.94+Math.random()*.12),o=c.createOscillator(),g=c.createGain(),lp=c.createBiquadFilter();
     o.type=v[1];o.frequency.setValueAtTime(f,t);o.frequency.exponentialRampToValueAtTime(f*.92,t+.05);
     lp.type='lowpass';lp.frequency.value=v[1]==='square'?1300:2400;
-    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v[1]==='square'?.035:.055,t+.006);g.gain.exponentialRampToValueAtTime(.0001,t+.06);
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v[1]==='square'?.045:.07,t+.006);g.gain.exponentialRampToValueAtTime(.0001,t+.06);
     o.connect(lp);lp.connect(g);toBus(g,0,.06);o.start(t);o.stop(t+.08);
   },
   objection(){thump(.42,110,38,.32);noiseHit(.22,1800,.09,0,.25,'bandpass',.8);noiseHit(.08,500,.4,0,.4,'lowpass');MUSIC.stab([50,53,57,62],.06);},
@@ -102,21 +102,21 @@ const SFX={
   lose(){const c=ac();if(!c)return;MUSIC.ep(45,c.currentTime,.9,.5,0,true);MUSIC.ep(46,c.currentTime+.02,.9,.32,0,true);},
   gavel(){[0,.17].forEach(function(d,i){thump(i?.16:.26,240,120,.12,d);noiseHit(i?.08:.14,1900,.05,0,.22,'bandpass',1.4,d);});},
   stamp(){thump(.32,160,55,.2);noiseHit(.18,1200,.07,0,.2,'bandpass',.9);},
-  ach(){const c=ac();if(!c)return;MUSIC.bell(83,c.currentTime,.05,true);MUSIC.bell(88,c.currentTime+.14,.045,true);},
-  reveal(){SFX.card();const c=ac();if(!c)return;MUSIC.bell(86,c.currentTime+.04,.03,true);},
-  coin(){const c=ac();if(!c)return;MUSIC.bell(88,c.currentTime,.03,true);MUSIC.bell(95,c.currentTime+.07,.025,true);},
-  whoosh(){noiseHit(.07,300,.6,0,.3,'bandpass',.6,0,2400);},
-  chime(i){const c=ac();if(!c||!S.sound)return;MUSIC.bell(pentaNote(i||0,72),c.currentTime,.035,true);},
-  pluck(i){const c=ac();if(!c||!S.sound)return;MUSIC.plk(pentaNote(i||0,60),c.currentTime,.5,.12,true);},
-  error(){beep(220,.12,'triangle',.06);beep(180,.16,'triangle',.05,.08);},
-  ok(){beep(880,.08,'sine',.05);beep(1320,.12,'sine',.045,.06);},
+  ach(){const c=ac();if(!c)return;MUSIC.bell(83,c.currentTime,.08,true);MUSIC.bell(88,c.currentTime+.14,.07,true);},
+  reveal(){SFX.card();const c=ac();if(!c)return;MUSIC.bell(86,c.currentTime+.04,.055,true);},
+  coin(){const c=ac();if(!c)return;MUSIC.bell(88,c.currentTime,.05,true);MUSIC.bell(95,c.currentTime+.07,.04,true);},
+  whoosh(){noiseHit(.1,300,.6,0,.3,'bandpass',.6,0,2400);},
+  chime(i){const c=ac();if(!c||!S.sound)return;MUSIC.bell(pentaNote(i||0,72),c.currentTime,.06,true);},
+  pluck(i){const c=ac();if(!c||!S.sound)return;MUSIC.plk(pentaNote(i||0,60),c.currentTime,.5,.6,true);},
+  error(){beep(220,.12,'triangle',.09);beep(180,.16,'triangle',.075,.08);},
+  ok(){beep(880,.08,'sine',.08);beep(1320,.12,'sine',.07,.06);},
   dock(){thump(.36,90,40,.3);noiseHit(.14,700,.2,0,.25,'bandpass',1.2);noiseHit(.05,3000,.05,0,.1,'bandpass',3,.12);},
   thrust(on){/* 持续推力由 Thruster 控制，见下 */},
-  launch(){noiseHit(.2,180,1.6,0,.3,'lowpass',.7,0,900);thump(.3,70,30,1.2);},
-  burn(){noiseHit(.06,2400,.35,0,.2,'bandpass',.8,0,600);},
-  pop(){beep(660,.06,'sine',.06);noiseHit(.04,2600,.04,0,.05,'bandpass',2);},
-  drop(){beep(320,.1,'triangle',.06);noiseHit(.05,900,.08,0,.1,'bandpass',1);},
-  radio(){noiseHit(.04,2200,.25,0,.15,'bandpass',2);beep(1020,.25,'square',.018,.02);}
+  launch(){noiseHit(.11,180,1.6,0,.3,'lowpass',.7,0,900);thump(.17,70,30,1.2);},
+  burn(){noiseHit(.1,2400,.35,0,.2,'bandpass',.8,0,600);},
+  pop(){beep(660,.06,'sine',.09);noiseHit(.07,2600,.04,0,.05,'bandpass',2);},
+  drop(){beep(320,.1,'triangle',.09);noiseHit(.08,900,.08,0,.1,'bandpass',1);},
+  radio(){noiseHit(.08,2200,.25,0,.15,'bandpass',2);beep(1020,.25,'square',.03,.02);}
 };
 /* 着陆器、机械臂之类的持续声：开着就响，关掉就停 */
 const Thruster={node:null,g:null,
@@ -133,7 +133,7 @@ const Thruster={node:null,g:null,
    ep 电钢琴 · str 弦乐垫 · bas 贝斯 · cel 低音弦 · bel 钟片 · plk 拨弦
    --------------------------------------------------------------- */
 const SONGS={
-  /* 长卷·五个时代各一首，滚动时交叉淡化 */
+  /* 五个时代各一首（星球与小游戏按时代取用），切换时交叉淡化 */
   retro:{bpm:84,bars:4,swing:.12,crackle:true,
     ch:[[41,[57,60,64,69]],[38,[57,60,62,65]],[43,[55,59,62,65]],[36,[55,60,64,67]]],
     arp:{steps:[0,6,8,14],idx:[0,2,1,3],vel:.3,oct:0},

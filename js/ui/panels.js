@@ -46,7 +46,7 @@ const Panels=(function(){
       b+='<div class="muted small">每一次以裁决结案，都会写下一条先例。和解结案不会。</div>';
       b+=PRECS.map(function(p){const on=S.precs.indexOf(p.id)>=0;return '<div class="law-card'+(on?'':' off')+'"><div class="lc-h"><b>'+(on?p.name:'？？？')+'</b><span>'+CHAPTERS[p.ch].year+'</span></div><div class="lc-t">'+(on?p.rule:'在第'+cnNum(CH_ORDER.indexOf(p.ch)+1)+'章以裁决结案后写入。')+'</div></div>';}).join('');
     }else if(tab==='hist'){
-      b+='<div class="muted small">长卷上的每个标记都是一张卡片。<span class="chip">史实</span><span class="chip amber">计划</span><span class="chip fact">推演</span><span class="chip red">游戏故事</span></div>';
+      b+='<div class="muted small">星图外圈航迹上的每个标记都是一张卡片。<span class="chip">史实</span><span class="chip amber">计划</span><span class="chip fact">推演</span><span class="chip red">游戏故事</span></div>';
       ERAS.forEach(function(E){
         b+='<h3>'+E.from+'—'+E.to+'　'+E.name+'</h3>';
         b+=HISTORY.filter(function(h){return h.y>=E.from&&h.y<=E.to;}).map(function(h){const seen=S.hist.indexOf(h.id)>=0;return '<button class="row-item hist-row'+(seen?'':' new')+'" data-hist="'+h.id+'"><span class="ri-y">'+h.y+'</span><span class="ri-t">'+esc(h.t)+'</span><span class="ri-r">'+kindChip(h.kind)+'</span></button>';}).join('');

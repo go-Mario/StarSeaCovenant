@@ -239,16 +239,21 @@ function chapterCard(C){
   return new Promise(function(res){
     const card=byId('chapterCard');
     const newM=(C.newMech||[]).map(function(m){return '<span class="chip">'+(TIPS[m]?TIPS[m].t:m)+'</span>';}).join('');
-    card.className='layer on era-'+C.era;
-    card.innerHTML='<div class="cc-in">'+
-      '<div class="cc-year">'+C.year+'</div>'+
-      '<div class="cc-num">'+C.num+'</div>'+
-      '<div class="cc-title">'+C.title+'</div>'+
-      '<div class="cc-sub">'+C.sub+'</div>'+
-      '<div class="cc-role">你的身份　'+C.roleLine+'</div>'+
-      (newM?'<div class="cc-new"><span>本章新机制</span>'+newM+'</div>':'')+
-      (TH.fresh?'<div class="cc-buff">精力充沛：气势多一格</div>':'<div class="cc-buff dim">精力不足 70，本章没有额外气势。去休憩舱放松一下会好些。</div>')+
-      '<button class="btn" id="ccGo">开庭</button><button class="btn ghost sm" id="ccBack">返回</button></div>';
+    card.className='layer on dossier era-'+C.era;
+    const M=C.verdict||{},row=function(k,v){return v?'<div class="dz-row"><span>'+k+'</span><b>'+v+'</b></div>':'';};
+    card.innerHTML='<div class="dz">'+
+      '<div class="dz-tab">案 卷</div>'+
+      '<div class="dz-no">'+(M.no||'')+'</div>'+
+      '<div class="dz-year">'+C.year+'</div>'+
+      '<div class="dz-num">'+C.num+(C.arbiter?' · 仲裁员':'')+'</div>'+
+      '<div class="dz-title">'+C.title+'</div>'+
+      '<div class="dz-sub">'+C.sub+'</div>'+
+      '<div class="dz-rule"></div>'+
+      row('受理机构',M.court?String(M.court).replace(/\s+/g,''):'')+row('你的身份',C.roleLine)+row('争议焦点',C.issue)+row('适用规则',M.law)+
+      (newM?'<div class="dz-new"><span>本章新机制</span>'+newM+'</div>':'')+
+      (TH.fresh?'<div class="dz-buff">精力充沛：气势多一格</div>':'<div class="dz-buff dim">精力不足 70，本章没有额外气势。去休憩舱放松一下会好些。</div>')+
+      '<div class="dz-btns"><button class="btn ghost sm" id="ccBack">返回</button><button class="btn dz-go" id="ccGo">开 庭</button></div>'+
+      '<i class="dz-c tl"></i><i class="dz-c tr"></i><i class="dz-c bl"></i><i class="dz-c br"></i></div>';
     SFX.whoosh();
     byId('ccGo').onclick=function(){SFX.gavel();card.classList.remove('on');res();};
     byId('ccBack').onclick=function(){SFX.tap();card.classList.remove('on');TH.running=false;res();};
@@ -317,7 +322,7 @@ async function theaterFail(){
   else{await say(CUR.bench,'被申请人代理人未能就其抗辩完成举证。本庭支持申请人的仲裁请求。');}
   SFX.gavel();await sleep(400);
   await showVerdictDoc({lost:true});
-  await say('chen','这一庭输了。不要紧，重演室就是用来输的。回长卷上再开一次，换个打法。');
+  await say('chen','这一庭输了。不要紧，重演室就是用来输的。回星图上再开一次，换个打法。');
   endTheater(false);
   return 'fail';
 }

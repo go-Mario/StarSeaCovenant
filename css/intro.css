@@ -21,6 +21,10 @@
 /* 开场影像 */
 #intro{z-index:190;background:#000}
 #introFrame{position:absolute;inset:0}
+#introCv{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:0;transition:opacity .9s}
+#introCv.on{opacity:1}
+#introAI{position:absolute;top:calc(8% + var(--safe-t));right:14px;z-index:6;display:none;padding:3px 8px;border-radius:4px;border:1px solid rgba(255,255,255,.4);background:rgba(0,0,0,.45);color:rgba(255,255,255,.85);font-size:11px;letter-spacing:.12em}
+#introAI.on{display:block}
 .ishot{position:absolute;inset:0;opacity:0;transition:opacity 1s var(--ease)}
 .ishot.on{opacity:1}
 .ishot video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;filter:contrast(1.05) saturate(.9)}

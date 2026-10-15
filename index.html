@@ -11,7 +11,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23F3EDE1'/%3E%3Cpath d='M32 12v34M14 18h36M24 50h16M10 18l6 12 6-12M42 18l6 12 6-12' stroke='%23B8362B' stroke-width='3.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/fonts.css">
 <link rel="stylesheet" href="css/base.css">
-<link rel="stylesheet" href="css/hub.css">
+<link rel="stylesheet" href="css/map.css">
 <link rel="stylesheet" href="css/theater.css">
 <link rel="stylesheet" href="css/games.css">
 <link rel="stylesheet" href="css/panels.css">
@@ -58,6 +58,7 @@
   <symbol id="ic-pen" viewBox="0 0 24 24"><path d="M4 20l4-1L19 8l-3-3L5 16zM14 7l3 3"/></symbol>
   <symbol id="ic-broom" viewBox="0 0 24 24"><path d="M19 3l-7 7M9 10l5 5-4 6-7-7z"/></symbol>
   <symbol id="ic-archive" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v11h14V9M10 13h4"/></symbol>
+  <symbol id="ic-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="1.5"/></symbol>
   <symbol id="ic-leaf" viewBox="0 0 24 24"><path d="M5 19C5 10 11 5 20 4c0 9-5 15-14 15zM5 19l8-8"/></symbol>
 </defs>
 </svg>
@@ -69,7 +70,7 @@
     <div class="bt-title">星海公约</div>
     <div class="bt-sig">Stellar Covenant</div>
     <div class="bt-caps">AN ARBITRATION STORY　·　1957 — 2077</div>
-    <button class="btn red" id="bootGo">进入长卷</button>
+    <button class="btn red" id="bootGo">进入星图</button>
     <div class="bt-motto">真实的是法，虚构的是国</div>
   </div>
 </div>
@@ -77,9 +78,11 @@
 <!-- ===================== 开场影像 ===================== -->
 <div id="intro" class="layer">
   <div id="introFrame">
+    <canvas id="introCv"></canvas>
     <div class="ishot" id="shotA"><video playsinline muted preload="auto"></video><svg viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice"></svg></div>
     <div class="ishot" id="shotB"><video playsinline muted preload="auto"></video><svg viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice"></svg></div>
   </div>
+  <div id="introAI">画面由 AI 生成</div>
   <div id="introDip"></div>
   <div id="introTitle"><div class="it-name">星海公约</div><div class="it-sig">Stellar Covenant</div><div class="it-sub">1957 — 2077</div></div>
   <div id="introVeil"></div>
@@ -92,9 +95,10 @@
   </div>
 </div>
 
-<!-- ===================== 星海长卷 ===================== -->
+<!-- ===================== 星图 ===================== -->
 <div id="hub" class="layer">
-  <div id="hubView"><div id="hubWorld"></div></div>
+  <div id="mapStage"><canvas id="mapFog"></canvas><canvas id="mapCv"></canvas><canvas id="mapFx"></canvas><div id="mapVig"></div><div id="mapLabels"></div></div>
+  <div id="planetView"><canvas id="pvCv"></canvas><canvas id="pvGround"></canvas><svg id="pvPath"></svg><div id="pvHead"></div><div id="pvNodes"></div></div>
   <header id="hubHud">
     <button class="hud-me" id="hudMe"><span class="hud-av" id="hudAv"></span><span class="hud-who"><b id="hudName">简</b><small id="hudRank">见习仲裁员</small></span></button>
     <div class="hud-sp"></div>
@@ -104,17 +108,11 @@
     <button class="iconbtn btn-bgm" aria-label="音乐"></button>
   </header>
   <nav id="hubBar">
-    <div class="eras">
-      <button class="era-chip" data-era="e1"><b>1957</b><span>仰望</span></button>
-      <button class="era-chip" data-era="e2"><b>1970</b><span>出发</span></button>
-      <button class="era-chip" data-era="e3"><b>2000</b><span>拥挤</span></button>
-      <button class="era-chip" data-era="e4"><b>2030</b><span>开拓</span></button>
-      <button class="era-chip" data-era="e5"><b>2050</b><span>远望</span></button>
-    </div>
-    <div class="acts">
-      <button class="act" id="btnBench"><svg class="ic"><use href="#ic-gavel"/></svg><span>裁判练习</span></button>
-      <button class="act" id="btnRelax"><svg class="ic"><use href="#ic-leaf"/></svg><span>休憩舱</span></button>
-      <button class="act" id="btnArchive"><svg class="ic"><use href="#ic-archive"/></svg><span>档案馆</span></button>
+    <button class="cta" id="btnNext"><span class="cta-k">继续主线</span><b id="ctaT">1980 · 天降核雨</b></button>
+    <div class="map-ctl">
+      <button id="mapIn" aria-label="放大">+</button>
+      <button id="mapOut" aria-label="缩小">−</button>
+      <button id="mapFit" aria-label="看全貌"><svg class="ic"><use href="#ic-target"/></svg></button>
     </div>
   </nav>
 </div>
@@ -197,8 +195,7 @@
 <script src="js/chapters/ch4.js"></script>
 <script src="js/chapters/ch5.js"></script>
 <script src="js/chapters/ch6.js"></script>
-<script src="js/hub/eras.js"></script>
-<script src="js/hub/hub.js"></script>
+<script src="js/hub/starmap.js"></script>
 <script src="js/games/core.js"></script>
 <script src="js/games/sat.js"></script>
 <script src="js/games/lander.js"></script>
@@ -207,6 +204,7 @@
 <script src="js/games/station.js"></script>
 <script src="js/games/relax.js"></script>
 <script src="js/ui/panels.js"></script>
+<script src="js/ui/film.js"></script>
 <script src="js/ui/intro.js"></script>
 <script src="js/ui/boot.js"></script>
 <script src="js/main.js"></script>

@@ -1,8 +1,8 @@
 "use strict";
 /* =====================================================================
    开机页与开场影像。
-   开场影像七个镜头（素材在 assets/intro/），字幕念完即走，约 30 秒。
-   片源读取失败时，回落到矢量场景，不影响继续。
+   开场七个镜头，字幕念完即走，约 30 秒。默认用程序绘制的动画（js/ui/film.js），
+   也可以切换成 assets/intro/ 的影像；影像读取失败时自动回落到动画。
    ===================================================================== */
 const INTRO_SHOTS=[
  {clip:'01-sputnik',fb:'sc-c2031',cam:'camIn',amb:'sputnik',tx:'1957 年 10 月，一颗金属球飞过了所有国家的上空。<br>它只会发出“嘀，嘀”的声音。'},
@@ -12,6 +12,11 @@ const INTRO_SHOTS=[
  {clip:'05-snowfield',fb:'sc-tundra',cam:'camL',amb:'wind',grade:'brightness(.8) saturate(.85)',tx:'掉在谁的土地上，谁来赔？'},
  {clip:'06-nolaw',fb:'sc-c2077',cam:'camUp',amb:'room',dip:true,tx:'太空里没有警察，也没有法院。<br>能用的，只有各国签下的条约，和一次次坐下来讲道理。'},
  {clip:'07-tribunal',fb:'sc-c2077',cam:'camIn',amb:'room',tx:'2077 年，星海仲裁院。<br>这里存着人类在太空里吵过的每一架，也存着每一次是怎么吵完的。'}];
+/* 开场用哪一版画面：
+   drawn = 程序绘制的动画（默认，素材全部自有，体积小）；
+   clips = assets/intro/ 里的 7 段影像（经分析判断为 AI 生成，播放时角落会标注“画面由 AI 生成”）。
+   确认影像来源和授权后，把下面改成 'clips' 即可；调试时也可以在地址后加 ?intro=clips */
+const INTRO_CFG={mode:/[?&]intro=clips/.test(location.search)?'clips':'drawn'};
 const Intro=(function(){
   let on=false,pause=false,skipShot=false,clipsOK=null,resolver=null,timer=null;
   function wait(ms){return new Promise(function(res){let el=0;clearInterval(timer);timer=setInterval(function(){if(!on||skipShot){clearInterval(timer);res();return;}if(!pause)el+=100;if(el>=ms){clearInterval(timer);res();}},100);});}
@@ -25,19 +30,20 @@ const Intro=(function(){
     const sub=byId('introSub');
     if(sh.dip&&i>0){sub.style.opacity='0';byId('introDip').classList.add('on');await sleep(500);}
     L.className='ishot';
-    const v=L.querySelector('video'),svg=L.querySelector('svg');
+    const v=L.querySelector('video');
+    const ms=Math.max(3200,stripTags(sh.tx).length*120+1600);
     let useV=false;
-    if(clipsOK!==false){useV=await tryClip(v,'assets/intro/'+sh.clip+'.webm');if(i===0)clipsOK=useV;}
+    if(INTRO_CFG.mode==='clips'&&clipsOK!==false){useV=await tryClip(v,'assets/intro/'+sh.clip+'.webm');if(i===0)clipsOK=useV;}
+    byId('introAI').classList.toggle('on',useV);
     if(useV){L.classList.add('hasvid');v.style.filter=sh.grade||'';const want=Math.max(4200,stripTags(sh.tx).length*130+1800);
       const rate=isFinite(v.duration)&&v.duration>0?clamp(v.duration*1000/want,.45,.85):.6;
-      try{v.playbackRate=rate;v.currentTime=0;const p=v.play();if(p&&p.catch)p.catch(function(){});}catch(e){}}
-    else{svg.innerHTML='<use href="#'+sh.fb+'"/>';}
-    void L.offsetWidth;L.classList.add('on',sh.cam);if(P)P.classList.remove('on');
+      try{v.playbackRate=rate;v.currentTime=0;const p=v.play();if(p&&p.catch)p.catch(function(){});}catch(e){}
+      void L.offsetWidth;L.classList.add('on',sh.cam);if(P)P.classList.remove('on');}
+    else{Film.show(i,ms+900,!!sh.dip);if(P)P.classList.remove('on');}
     if(sh.dip&&i>0){byId('introDip').classList.remove('on');sub.style.opacity='';}
     const tx=byId('introTx');tx.classList.add('hide');tx.innerHTML=sh.tx;
     const stop=AMB.run(sh.amb,9);
     await wait(350);tx.classList.remove('hide');
-    const ms=Math.max(3200,stripTags(sh.tx).length*120+1600);
     const t0=Date.now(),bar=setInterval(function(){if(!pause)fillBar(i,Math.min(1,(Date.now()-t0)/ms));},200);
     await wait(ms);clearInterval(bar);fillBar(i,1);tx.classList.add('hide');stop();
   }
@@ -48,7 +54,7 @@ const Intro=(function(){
     await wait(3000);t.classList.remove('on');byId('introSub').style.opacity='';
   }
   function finish(){
-    if(!on)return;on=false;clearInterval(timer);
+    if(!on)return;on=false;clearInterval(timer);Film.stop();byId('introAI').classList.remove('on');
     byId('intro').classList.remove('on');byId('introTitle').classList.remove('on');byId('introDip').classList.remove('on');
     $$('#intro video').forEach(function(v){try{v.pause();v.removeAttribute('src');v.load();}catch(e){}});
     S.profile.introSeen=true;save();
@@ -60,7 +66,7 @@ const Intro=(function(){
         resolver=res;on=true;pause=false;
         byId('intro').classList.add('on');byId('introBarFill').style.width='0%';
         const h=byId('introHint');h.classList.add('on');setTimeout(function(){h.classList.remove('on');},5000);
-        MUSIC.start();MUSIC.setMode('intro');
+        MUSIC.start();MUSIC.setMode('intro');Film.start();
         for(let i=0;i<INTRO_SHOTS.length&&on;i++)await shot(INTRO_SHOTS[i],i);
         if(on)await title();
         finish();
@@ -69,7 +75,7 @@ const Intro=(function(){
     },
     tap(){if(!on||pause)return;skipShot=true;},
     skip(){SFX.tap();finish();},
-    pause(){if(!on)return;pause=!pause;byId('introPause').innerHTML=pause?icon('ic-play')+'继续':icon('ic-pause')+'暂停';
+    pause(){if(!on)return;pause=!pause;Film.pause(pause);byId('introPause').innerHTML=pause?icon('ic-play')+'继续':icon('ic-pause')+'暂停';
       $$('#intro video').forEach(function(v){try{if(pause)v.pause();else{const p=v.play();if(p&&p.catch)p.catch(function(){});}}catch(e){}});SFX.tap();},
     isOn(){return on;}
   };

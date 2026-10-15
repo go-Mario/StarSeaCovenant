@@ -105,15 +105,15 @@ function chapterResult(C,grade,r){
   return new Promise(function(res){
     const card=byId('chapterCard');
     const nextId=CH_ORDER[CH_ORDER.indexOf(TH.ch)+1];
-    card.className='layer on result';
-    card.innerHTML='<div class="cr-in paper">'+
+    card.className='layer on result dossier era-'+C.era;
+    card.innerHTML='<div class="cr-in dz">'+
       '<div class="cr-k">'+C.num+' · '+C.year+'</div><div class="cr-t">'+C.title+'</div>'+
       '<div class="cr-grade"><span class="stamp">'+grade+'</span></div>'+
       '<div class="cr-rw">'+(r.rep?'<span class="chip">声望 +'+r.rep+'</span>':'')+'<span class="chip amber">星尘 +'+r.dust+'</span><span class="chip">精力 -20</span>'+(r.first&&C.law?'<span class="chip ok">法典：'+LAW_BY[C.law].name+'</span>':'')+'</div>'+
       (r.newPrec?'<div class="cr-prec"><b>写入先例 · '+r.newPrec.name+'</b>'+r.newPrec.rule+'</div>':(r.settled?'<div class="cr-prec muted">和解结案，不形成先例。</div>':''))+
       '<hr><div class="cr-real"><div class="cr-rk">现实原型</div>'+fill(C.real)+'</div>'+
-      (nextId&&r.first?'<div class="cr-next">长卷上，<b>'+CHAPTERS[nextId].year+' · '+CHAPTERS[nextId].title+'</b> 已经亮起。</div>':'')+
-      '<button class="btn block" id="crOk">回到长卷</button></div>';
+      (nextId&&r.first?'<div class="cr-next">星图上，<b>'+CHAPTERS[nextId].year+' · '+CHAPTERS[nextId].title+'</b> 已经亮起。</div>':'')+
+      '<button class="btn block dz-go" id="crOk">回到星图</button><i class="dz-c tl"></i><i class="dz-c tr"></i><i class="dz-c bl"></i><i class="dz-c br"></i></div>';
     byId('crOk').onclick=function(){SFX.tap();card.classList.remove('on');res();};
   });
 }

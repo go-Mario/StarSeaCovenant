@@ -26,11 +26,11 @@
   byId('introPause').onclick=function(e){e.stopPropagation();Intro.pause();};
   /* 小游戏 */
   byId('gmBack').onclick=function(){SFX.tap();Games.close();};
-  /* 长卷底栏 */
-  $$('#hubBar .era-chip').forEach(function(b){b.onclick=function(){Hub.scrollToEra(b.getAttribute('data-era'));};});
-  byId('btnRelax').onclick=function(){Panels.open('relax');};
-  byId('btnArchive').onclick=function(){Panels.open('archive','me');};
-  byId('btnBench').onclick=function(){Panels.open('bench');};
+  /* 星图底栏 */
+  byId('btnNext').onclick=function(){SFX.tap();Hub.goNext();};
+  byId('mapIn').onclick=function(){SFX.tap();StarMap.zoomBy(1.5);};
+  byId('mapOut').onclick=function(){SFX.tap();StarMap.zoomBy(1/1.5);};
+  byId('mapFit').onclick=function(){SFX.tap();StarMap.fit(true);};
   byId('hudDustBtn').onclick=function(){Panels.open('archive','shop');};
   byId('hudMe').onclick=function(){Panels.open('archive','me');};
   $$('.btn-snd').forEach(function(b){b.onclick=toggleSound;});
@@ -38,7 +38,7 @@
   byId('bootGo').onclick=enterGame;
 
   /* 按压反馈 */
-  const SEL='.btn,.iconbtn,.choice,.sh-item,.node,.hmark,.bd-q,.row-item,.rx-item,.part,.bench-opt,.cbtn';
+  const SEL='.btn,.iconbtn,.choice,.sh-item,.cta,.bd-q,.row-item,.rx-item,.part,.bench-opt,.cbtn';
   let pressed=null;
   document.addEventListener('pointerdown',function(e){const t=e.target.closest&&e.target.closest(SEL);if(t&&!t.disabled){pressed=t;t.classList.add('press-fx');}},{passive:true});
   ['pointerup','pointercancel','pointerleave'].forEach(function(ev){document.addEventListener(ev,function(){if(pressed){pressed.classList.remove('press-fx');pressed=null;}},{passive:true});});
@@ -68,10 +68,18 @@
     if(byId('game').classList.contains('on')){if(k==='Escape')Games.close();return;}
     if(byId('panel').classList.contains('on')){if(k==='Escape')Panels.close();return;}
     if(byId('hub').classList.contains('on')){
-      const v=byId('hubView');
-      if(k==='ArrowRight'){v.scrollBy({left:240,behavior:'smooth'});return;}
-      if(k==='ArrowLeft'){v.scrollBy({left:-240,behavior:'smooth'});return;}
-      if(/^[1-5]$/.test(k)){Hub.scrollToEra('e'+k);return;}
+      if(PlanetView.isOpen()){
+        if(k==='Escape'||k==='Backspace'){e.preventDefault();PlanetView.close();return;}
+        if(nth('#pvNodes .pn',k,e))return;
+      }else{
+        const pan={ArrowRight:[160,0],ArrowLeft:[-160,0],ArrowUp:[0,-160],ArrowDown:[0,160]}[k];
+        if(pan){e.preventDefault();StarMap.pan(pan[0],pan[1]);return;}
+        if(k==='+'||k==='='){StarMap.zoomBy(1.4);return;}
+        if(k==='-'||k==='_'){StarMap.zoomBy(1/1.4);return;}
+        if(k==='0'){StarMap.fit(true);return;}
+        if(/^[1-6]$/.test(k)){StarMap.land(WORLDS[+k-1].id);return;}
+        if(k==='Enter'){Hub.goNext();return;}
+      }
     }
     if(k==='m'||k==='M')toggleBgm();
   });
