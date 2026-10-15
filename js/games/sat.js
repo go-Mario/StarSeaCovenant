@@ -68,9 +68,9 @@ GAMES.sat=(function(){
       '<div class="btnrow"><button class="btn red" id="rfStamp">盖章登记</button><button class="btn ghost sm" id="rfSkip">不登记，直接发射</button></div></div></div>';
     $$('#rfMis button',host).forEach(function(b){b.onclick=function(){st.mis=+b.getAttribute('data-m');SFX.tap();$$('#rfMis button',host).forEach(function(x){x.classList.toggle('on',x===b);});};});
     $$('#rfOrb button',host).forEach(function(b){b.onclick=function(){st.orb=+b.getAttribute('data-o');SFX.tap();$$('#rfOrb button',host).forEach(function(x){x.classList.toggle('on',x===b);});};});
-    byId('rfStamp').onclick=function(){st.name=(byId('rfName').value||'星火-1').slice(0,10);st.reg=true;SFX.stamp();buzz(30);
+    byId('rfStamp').onclick=function(){if(st.launching)return;st.launching=true;byId('rfSkip').disabled=true;this.disabled=true;st.name=(byId('rfName').value||'星火-1').slice(0,10);st.reg=true;SFX.stamp();buzz(30);
       const f=$('.reg-form',host);const s=el('div','rf-stamp','已登记');f.appendChild(s);setTimeout(function(){launch(host);},900);};
-    byId('rfSkip').onclick=function(){st.name=(byId('rfName').value||'星火-1').slice(0,10);st.reg=false;SFX.tap();launch(host);};
+    byId('rfSkip').onclick=function(){if(st.launching)return;st.launching=true;byId('rfStamp').disabled=true;st.name=(byId('rfName').value||'星火-1').slice(0,10);st.reg=false;SFX.tap();launch(host);};
   }
   /* 发射：黄昏的发射场 → 镜头跟着火箭往上，天慢慢变黑 → 卫星入轨 */
   function launch(host){

@@ -15,6 +15,7 @@
 <link rel="stylesheet" href="css/theater.css">
 <link rel="stylesheet" href="css/games.css">
 <link rel="stylesheet" href="css/panels.css">
+<link rel="stylesheet" href="css/pen.css">
 <link rel="stylesheet" href="css/intro.css">
 </head>
 <body>
@@ -122,6 +123,7 @@
 
 <!-- ===================== 面板 / 小游戏 ===================== -->
 <div id="panel" class="layer"></div>
+<div id="pen" class="layer"></div>
 <div id="game" class="layer">
   <div class="gm-head"><button class="iconbtn" id="gmBack"><svg class="ic"><use href="#ic-back"/></svg></button><div class="gm-t"><b id="gmTitle"></b><span id="gmSub"></span></div><div class="gm-score" id="gmScore"></div></div>
   <div id="gmStage"></div>
@@ -144,11 +146,13 @@
       <svg class="scene fg" id="scDesk" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice"></svg>
     </div>
     <div id="thGrade"></div>
+    <button class="sr-edge l" id="srL"></button><button class="sr-edge r" id="srR"></button>
   </div>
   <div id="thHud">
     <div class="th-left"><div id="morale"></div><div id="standing"></div><div id="mission"></div></div>
     <div class="th-right"><span id="thYear"></span><button class="iconbtn sm" id="hintBtn" title="提示卡"><svg class="ic"><use href="#ic-bulb"/></svg></button><button class="iconbtn sm" id="thSkip" title="按住快进（或按住 Ctrl）"><svg class="ic"><use href="#ic-ff"/></svg></button><button class="iconbtn sm" id="thExit" title="退出本章"><svg class="ic"><use href="#ic-exit"/></svg></button></div>
   </div>
+  <div id="srBar"></div>
   <div id="dlg">
     <div id="dlgInner"><div id="dlgName"></div><div id="dlgText"></div><div id="dlgNext"><svg class="ic"><use href="#ic-down"/></svg></div></div>
   </div>
@@ -191,6 +195,7 @@
 <script src="js/data/bench.js"></script>
 <script src="js/data/quiz.js"></script>
 <script src="js/theater/engine.js"></script>
+<script src="js/theater/search.js"></script>
 <script src="js/theater/mech.js"></script>
 <script src="js/theater/arbiter.js"></script>
 <script src="js/theater/verdict.js"></script>
@@ -210,6 +215,7 @@
 <script src="js/games/station.js"></script>
 <script src="js/games/relax.js"></script>
 <script src="js/ui/panels.js"></script>
+<script src="js/ui/pen.js"></script>
 <script src="js/ui/film.js"></script>
 <script src="js/ui/cine.js"></script>
 <script src="js/ui/intro.js"></script>

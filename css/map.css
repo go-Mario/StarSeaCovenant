@@ -129,6 +129,13 @@
 #pvNodes.dense .pn-orb{width:48px;height:48px;margin-bottom:4px}
 #pvNodes.dense .pn-orb .ic{width:20px;height:20px}
 #pvNodes.dense .pn-t{font-size:14px}
+#pvNodes.tight .pn{width:124px}
+#pvNodes.tight .pn-orb{width:42px;height:42px;margin-bottom:3px}
+#pvNodes.tight .pn-orb .ic{width:19px;height:19px}
+#pvNodes.tight .pn-t{font-size:13px;letter-spacing:.02em;line-height:1.3}
+#pvNodes.tight .pn-y{font-size:10.5px;letter-spacing:.16em}
+#pvNodes.tight .pn-tag{margin-top:2px;padding:0 6px;font-size:10px;letter-spacing:.04em}
+#pvNodes.tight .pn-arb,#pvNodes.tight .pn-s{display:none}
 /* 竖向时间线（手机竖屏、节点多） */
 #pvNodes.col .pn{flex-direction:row;align-items:center;gap:12px;width:auto;text-align:left;transform:translate(-24px,-50%);animation-name:pnInCol}
 @keyframes pnInCol{from{opacity:0;transform:translate(-12px,-50%)}to{opacity:1;transform:translate(-24px,-50%)}}

@@ -116,7 +116,7 @@ GAMES.lander=(function(){
     ctx.fillStyle='#5D636E';ctx.fillRect(-12,-8,2.5,2.5);ctx.fillRect(9.5,-8,2.5,2.5);
   }
   function start(host,api,lvArg){
-    const rec=SAVE.game('lander');const lvI=clamp(lvArg==null?0:lvArg,0,LV.length-1),L=LV[lvI];
+    const rec=SAVE.game('lander');const lvI=clamp(lvArg==null?Math.min(rec.level||0,LV.length-1):lvArg,0,LV.length-1),L=LV[lvI];
     host.innerHTML='<div class="ld-hud"><span>高度<b id="ldAlt">0</b><i>米</i></span><span id="ldVyBox">下降<b id="ldVy">0</b><i>米/秒</i></span><span id="ldVxBox">横移<b id="ldVx">0</b></span><span id="ldAgBox">姿态<b id="ldAg">0°</b></span><span class="ld-fuel"><em>燃料</em><span><i id="ldFuel"></i></span></span></div>'+
       '<div class="ld-ctl"><button class="ld-b" data-k="l" aria-label="向左转">◀</button><button class="ld-b big" data-k="t">推 力</button><button class="ld-b" data-k="r" aria-label="向右转">▶</button></div>';
     const C=stageCanvas(host),ctx=C.ctx,W=C.w(),H=C.h();
