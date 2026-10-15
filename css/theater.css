@@ -114,6 +114,7 @@
 #dlgNext{position:absolute;right:24px;bottom:4px;color:#E6B34D;animation:nextBob 1.3s ease-in-out infinite}
 @keyframes nextBob{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
 @media (max-width:430px){#theater{--dlgH:240px}#dlgText{font-size:16px}#dlgInner{padding:12px 18px 0}#dlgName{left:18px}#dlgInner::before{left:18px;right:18px}}
+@media (max-width:430px) and (max-height:640px){#theater{--dlgH:206px}#dlgText{font-size:15.5px;line-height:1.8}}
 @media (orientation:landscape) and (max-height:480px){#theater{--dlgH:140px}#dlgText{margin-top:8px;font-size:14.5px;line-height:1.75}#dlgName{font-size:12.5px}}
 
 /* 质询按钮 */
@@ -215,9 +216,9 @@
 .bd-in.award .btn.red{margin-top:16px}
 
 /* 新机制说明卡 */
-#tipCard{position:absolute;inset:0;z-index:50;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(3,5,10,.7)}
+#tipCard{position:absolute;inset:0;z-index:50;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(3,5,10,.7);overflow-y:auto}
 #tipCard.on{display:flex}
-#tipCard .tc-in{position:relative;max-width:440px;padding:26px 24px 20px;border-radius:6px;background:linear-gradient(180deg,#0E1426,#0A0F1D);border:1px solid rgba(200,178,115,.45);color:#E8E2D2;
+#tipCard .tc-in{position:relative;max-width:440px;margin:auto;padding:26px 24px 20px;border-radius:6px;background:linear-gradient(180deg,#0E1426,#0A0F1D);border:1px solid rgba(200,178,115,.45);color:#E8E2D2;
   box-shadow:0 30px 70px rgba(0,0,0,.6),inset 0 0 0 5px #0A0F1D,inset 0 0 0 6px rgba(200,178,115,.15);animation:popCard .35s var(--pop) both}
 @keyframes popCard{from{opacity:0;transform:scale(.94) translateY(10px)}to{opacity:1;transform:none}}
 .tc-k{font-size:11px;letter-spacing:.4em;color:#E6B34D;font-weight:700}
@@ -260,6 +261,15 @@
 .dz-btns .btn.ghost{color:#C9C0A8;border-color:rgba(200,178,115,.35)}
 .btn.dz-go{min-width:150px;background:linear-gradient(180deg,#E9BE62,#C8962F);color:#1B1206;font-family:var(--f-serif);font-weight:700;letter-spacing:.3em;text-indent:.3em;box-shadow:0 6px 0 #6E4E14,0 14px 30px rgba(230,179,77,.25)}
 .btn.dz-go:hover{filter:brightness(1.06)}
+/* 矮屏（如微信内置浏览器、小屏手机）：案卷收紧，开庭按钮一屏内可见 */
+@media (max-height:680px){
+  .dz{padding:22px 18px 16px}
+  .dz-year{font-size:clamp(40px,11vw,56px);margin-top:2px}
+  .dz-title{font-size:clamp(22px,5.6vw,28px)}
+  .dz-rule{margin:10px 6px 6px}
+  .dz-row{padding:5px 2px;font-size:12.5px;line-height:1.5}
+  .dz-new{margin-top:8px}.dz-buff{margin-top:6px}.dz-btns{margin-top:12px}
+}
 /* 结案卡沿用卷宗样式 */
 #chapterCard.result{background:rgba(3,5,11,.88)}
 .cr-in{max-height:92vh;overflow-y:auto;text-align:left;animation:dzIn .45s var(--ease) both}

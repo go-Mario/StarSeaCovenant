@@ -75,10 +75,10 @@ GAMES.orbit=(function(){
       st.flash.forEach(function(f){const k=1-f.t/.7;ctx.strokeStyle='rgba('+f.c+','+k+')';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(f.x,f.y,12+f.t*70,0,7);ctx.stroke();
         ctx.globalAlpha=k;GameArt.glowText(ctx,f.txt,f.x,f.y-30-f.t*30,f.txt.length>2?15:18,'rgb('+f.c+')',10);ctx.globalAlpha=1;});
       /* 倒计时：一条细金线 + 秒数 */
-      const bw=Math.min(240,W*.6),bx=cx-bw/2,by=H*.1+14,k=st.left/15;
+      const ty=Math.max(H*.1,92),bw=Math.min(240,W*.6),bx=cx-bw/2,by=ty+14,k=st.left/15;
       ctx.fillStyle='rgba(255,255,255,.1)';ctx.fillRect(bx,by,bw,3);
       ctx.fillStyle=k<.25?'#FF8A72':'#E6B34D';ctx.fillRect(bx,by,bw*k,3);GameArt.soft(ctx,bx+bw*k,by+1.5,8,k<.25?'255,138,114':'246,195,91',.9);
-      ctx.font=GameArt.mono(20,600);ctx.textAlign='center';ctx.textBaseline='alphabetic';ctx.fillStyle=k<.25?'#FF8A72':'#F3EDE1';ctx.fillText(st.left.toFixed(1),cx,H*.1+2);
+      ctx.font=GameArt.mono(20,600);ctx.textAlign='center';ctx.textBaseline='alphabetic';ctx.fillStyle=k<.25?'#FF8A72':'#F3EDE1';ctx.fillText(st.left.toFixed(1),cx,ty+2);
       GameArt.caption(ctx,'金色＝空轨位　红色＝别人在用　蓝色＝闲置收回',cx,H-30,{size:12});
     });
     function done(why){

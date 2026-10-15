@@ -122,6 +122,7 @@ GAMES.sweep=(function(){
     C.c.addEventListener('pointerdown',function(e){st.down=true;const r=C.c.getBoundingClientRect();last={x:e.clientX-r.left,y:e.clientY-r.top};st.trail=[last];C.c.setPointerCapture(e.pointerId);});
     C.c.addEventListener('pointermove',function(e){if(!st.down||st.over)return;const r=C.c.getBoundingClientRect(),p={x:e.clientX-r.left,y:e.clientY-r.top};slice(last.x,last.y,p.x,p.y);last=p;st.trail.push(p);if(st.trail.length>12)st.trail.shift();});
     C.c.addEventListener('pointerup',function(){st.down=false;st.combo=0;});
+    C.c.addEventListener('pointercancel',function(){st.down=false;st.combo=0;});/* 系统手势打断时也要松开，否则鼠标悬停也会划 */
     api.setScore('清掉 <b>0</b> 块');
     function metal(x0,y0,x1,y1,c0,c1){const q=ctx.createLinearGradient(x0,y0,x1,y1);q.addColorStop(0,c0);q.addColorStop(1,c1);return q;}
     function drawItem(it){
@@ -196,6 +197,7 @@ GAMES.paint=(function(){
       if(Math.hypot(x-st.down.x,y-st.down.y)>8)st.down.moved=true;
       if(st.down.moved){for(let i=0;i<3;i++)addP(x,y,(x-st.down.px)*6+(Math.random()-.5)*30,(y-st.down.py)*6+(Math.random()-.5)*30);if(Math.random()<.3)SFX.pluck(Math.floor(y/H*10));}
       st.down.px=x;st.down.py=y;});
+    C.c.addEventListener('pointercancel',function(){st.down=null;});
     C.c.addEventListener('pointerup',function(){
       if(st.down&&!st.down.moved){if(st.wells.length>=5)st.wells.shift();st.wells.push({x:st.down.x,y:st.down.y,m:.8+Math.random()*.6});SFX.chime(st.wells.length+2);
         for(let i=0;i<24;i++){const a=i/24*6.283;addP(st.down.x+Math.cos(a)*60,st.down.y+Math.sin(a)*60,-Math.sin(a)*120,Math.cos(a)*120);}}

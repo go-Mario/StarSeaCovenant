@@ -16,7 +16,8 @@
 .gm-card{position:absolute;inset:0;z-index:20;display:none;align-items:center;justify-content:center;padding:70px 16px 20px;background:radial-gradient(ellipse at 50% 40%,rgba(10,14,28,.6),rgba(3,5,10,.86));backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);overflow-y:auto}
 .gm-card.on{display:flex}
 /* 说明卡与结算卡：和法庭的提示卡同一套深色卷宗 */
-.gm-in{width:100%;max-width:460px;padding:24px 22px 18px;animation:popCard .35s var(--pop) both}
+.gm-in{width:100%;max-width:460px;margin:auto;padding:24px 22px 18px;animation:popCard .35s var(--pop) both}
+@media (max-height:640px){.gm-card{padding-top:58px}.gm-in{padding:18px 18px 14px}.gm-in h3{font-size:21px;margin:4px 0 8px}.gm-how{font-size:13.5px;line-height:1.75}.gm-fact{margin-top:10px;font-size:13px;line-height:1.7}}
 .gm-in.paper{background:linear-gradient(180deg,#0F1528,#0A0F1D);color:#E8E2D2;border:1px solid rgba(200,178,115,.45);border-radius:6px;
   box-shadow:0 30px 70px rgba(0,0,0,.6),inset 0 0 0 5px #0A0F1D,inset 0 0 0 6px rgba(200,178,115,.14)}
 .gm-in.paper::before{display:none}

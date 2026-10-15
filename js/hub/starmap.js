@@ -693,7 +693,18 @@ const PlanetView=(function(){
     return [];
   }
   const GAME_IC={sat:'ic-sat',orbit:'ic-orbit',station:'ic-station',lander:'ic-moon',sling:'ic-sling',const:'ic-star',sweep:'ic-broom',paint:'ic-orbit'};
+  /* 竖屏、节点多（≥4）时排成一条竖向时间线：圆点在左，文字在右，第一个在最下面 */
+  function colMode(n){return W/H<.95&&n>=4;}
+  function layoutCol(n){
+    const hd=byId('pvHead'),hb=hd.offsetHeight?hd.offsetTop+hd.offsetHeight:150,top=Math.max(170,hb+48);/* 用布局尺寸，不受降落动画缩放影响 */
+    let bottom=H-Math.max(56,H*.15+30);
+    if((bottom-top)/(n-1)<(H<640?52:66))bottom=H-34;
+    const gap=Math.min(104,(bottom-top)/(n-1)),pts=[],x0=Math.max(46,W*.13);
+    for(let i=0;i<n;i++)pts.push({x:x0+(i%2?16:0),y:bottom-gap*i});
+    return pts;
+  }
   function layout(n){
+    if(colMode(n))return layoutCol(n);
     const portrait=W/H<.95,top=portrait?205:175,bot=portrait?H*.2+40:H*.24+30,pts=[];
     for(let i=0;i<n;i++){
       if(portrait){const y=n===1?(top+H-bot)/2:H-bot-(H-bot-top)*i/(n-1);const x=n<=2?W*(i%2?.66:.34):W*(i%2?.7:.3);pts.push({x:x,y:y});}
@@ -707,20 +718,22 @@ const PlanetView=(function(){
     head.innerHTML='<button class="pv-back" id="pvBack">'+icon('ic-back')+'<span>星图</span></button>'+
       '<div class="pv-t"><b>'+w.name+'</b><span>'+w.en+'</span><em>'+w.line+'</em></div>';
     byId('pvBack').onclick=function(){SFX.tap();close();};
-    const nodes=nodesOf(w),pts=layout(nodes.length),nx=nextCh();
+    const nodes=nodesOf(w),col=colMode(nodes.length);
+    byId('pvNodes').classList.toggle('col',col);byId('pvNodes').classList.toggle('dense',!col&&W/H<.95&&nodes.length>=5);
+    const pts=layout(nodes.length),nx=nextCh();
     let h='',path='';
     nodes.forEach(function(n,i){
       const p=pts[i],isNext=(n.k==='ch'&&n.id===nx)||(n.k==='game'&&n.st==='open'&&!nodes.slice(0,i).some(function(m){return m.st==='open';}));
-      h+='<button class="pn k-'+n.k+' st-'+n.st+(isNext?' next':'')+(n.id===focusId?' focus':'')+'" data-k="'+n.k+'" data-id="'+n.id+'" style="left:'+p.x.toFixed(0)+'px;top:'+p.y.toFixed(0)+'px;animation-delay:'+(.12+i*.07).toFixed(2)+'s">'+
-        '<span class="pn-orb">'+icon(n.st==='locked'?'ic-lock':n.ic)+'</span>'+
-        (n.y?'<span class="pn-y">'+n.y+'</span>':'')+'<span class="pn-t">'+n.t+'</span>'+(n.s?'<span class="pn-s">'+n.s+'</span>':'')+
-        (n.tag?'<span class="pn-tag">'+esc(n.tag)+'</span>':'')+(n.arb?'<span class="pn-arb">仲裁员</span>':'')+'</button>';
-      if(i){const a=pts[i-1],mx=(a.x+p.x)/2,my=(a.y+p.y)/2-30,done=nodes[i-1].st==='done';
-        path+='<path class="'+(done?'solid':'')+'" d="M'+a.x.toFixed(0)+' '+a.y.toFixed(0)+' Q'+mx.toFixed(0)+' '+my.toFixed(0)+' '+p.x.toFixed(0)+' '+p.y.toFixed(0)+'"/>';}
+      h+='<button class="pn k-'+n.k+' st-'+n.st+(isNext?' next':'')+(n.id===focusId?' focus':'')+'" data-k="'+n.k+'" data-id="'+n.id+'" style="left:'+p.x.toFixed(0)+'px;top:'+p.y.toFixed(0)+'px;'+(col?'max-width:'+Math.round(W-p.x-18)+'px;':'')+'animation-delay:'+(.12+i*.07).toFixed(2)+'s">'+
+        '<span class="pn-orb">'+icon(n.st==='locked'?'ic-lock':n.ic)+'</span><span class="pn-tx">'+
+        '<span class="pn-l1">'+(n.y?'<span class="pn-y">'+n.y+'</span>':'')+(n.tag?'<span class="pn-tag">'+esc(n.tag)+'</span>':'')+(n.arb?'<span class="pn-arb">仲裁员</span>':'')+'</span>'+
+        '<span class="pn-t">'+n.t+'</span>'+(n.s?'<span class="pn-s">'+n.s+'</span>':'')+'</span></button>';
+      if(i){const a=pts[i-1],done=nodes[i-1].st==='done';
+        const q=col?[(a.x+p.x)/2+(i%2?-22:22),(a.y+p.y)/2]:[(a.x+p.x)/2,(a.y+p.y)/2-30];
+        path+='<path class="'+(done?'solid':'')+'" d="M'+a.x.toFixed(0)+' '+a.y.toFixed(0)+' Q'+q[0].toFixed(0)+' '+q[1].toFixed(0)+' '+p.x.toFixed(0)+' '+p.y.toFixed(0)+'"/>';}
     });
     byId('pvPath').setAttribute('viewBox','0 0 '+W+' '+H);byId('pvPath').innerHTML=path;
     byId('pvNodes').innerHTML=h;
-    byId('pvNodes').classList.toggle('dense',W/H<.95&&nodes.length>=5);
     $$('#pvNodes .pn').forEach(function(b){b.onclick=function(){go(b.getAttribute('data-k'),b.getAttribute('data-id'));};});
   }
   function go(k,id){
@@ -751,9 +764,9 @@ const PlanetView=(function(){
   function open(id,focus){
     cur=id;focusId=focus||'';
     const v=byId('planetView');cv=byId('pvCv');g=cv.getContext('2d');
+    v.classList.add('on');byId('hub').classList.add('in-planet');
     paint();render();
     const gc=byId('pvGround');gc.style.animation='none';void gc.offsetWidth;gc.style.animation='';
-    v.classList.add('on');byId('hub').classList.add('in-planet');
     StarMap.stop();
     MUSIC.setMode(WORLD_BY[id].music);setTimeout(function(){SFX.chime(4);},380);
     if(focus){const b=$('#pvNodes .pn[data-id="'+focus+'"]');if(b)setTimeout(function(){b.classList.add('flash');},700);}
