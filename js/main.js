@@ -32,6 +32,7 @@
   byId('mapOut').onclick=function(){SFX.tap();StarMap.zoomBy(1/1.5);};
   byId('mapFit').onclick=function(){SFX.tap();StarMap.fit(true);};
   byId('hudDustBtn').onclick=function(){Panels.open('archive','shop');};
+  byId('hudWork').onclick=function(){Panels.open('office');};
   byId('hudMe').onclick=function(){Panels.open('archive','me');};
   $$('.btn-snd').forEach(function(b){b.onclick=toggleSound;});
   $$('.btn-bgm').forEach(function(b){b.onclick=toggleBgm;});
@@ -65,6 +66,7 @@
       if(k===' '||k==='Enter'){e.preventDefault();dlgTap();}
       return;
     }
+    if(Work.memoOn()){const ok=byId('memoOk');if(ok&&(k===' '||k==='Enter'||k==='Escape')){e.preventDefault();ok.click();return;}nth('#memoCard .mm-opt',k,e);return;}
     if(byId('pen').classList.contains('on')){if(k==='Escape')Pen.back();return;}
     if(byId('game').classList.contains('on')){if(k==='Escape')Games.close();return;}
     if(byId('panel').classList.contains('on')){if(k==='Escape')Panels.close();return;}

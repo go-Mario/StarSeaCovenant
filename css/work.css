@@ -1,0 +1,83 @@
+/* =====================================================================
+   秘书处：工时与调休。纸面便笺 + 工牌式的时钟。
+   ===================================================================== */
+
+/* 星图顶栏：精力条上方加一行日期与时钟，点开就是秘书处 */
+#hubHud .hud-focus{flex-direction:column;align-items:stretch;gap:3px;padding:5px 12px 6px;cursor:pointer;text-align:left;line-height:1.2}
+.hud-focus .hw-c{display:flex;align-items:baseline;gap:5px;font:500 10.5px/1.2 var(--f-mono);color:#C8B273;letter-spacing:.04em;white-space:nowrap}
+.hud-focus .hw-c b{font-weight:600;color:#EAF0FB}
+.hud-focus .hw-c em{font-style:normal;font-family:var(--f-sans);font-size:10px;padding:0 5px;border-radius:4px;background:rgba(232,119,90,.2);color:#FFB3A6}
+.hud-focus .hw-ot{font-family:var(--f-sans);font-size:10px;padding:0 5px;border-radius:4px;background:rgba(63,163,111,.22);color:#7FE3AE}
+.hud-focus .hw-f{display:flex;align-items:center;gap:6px}
+@media (max-width:560px){.hud-focus .hw-d,.hud-focus .hw-ot{display:none}.hud-focus .hw-f>span{display:none}}
+@media (max-width:360px){.hud-focus .hw-c em{display:none}}
+
+/* 便笺 */
+#memo{z-index:70;background:rgba(3,5,11,.62);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+#memo.on{display:flex;align-items:center;justify-content:center;padding:16px}
+.memo-card{width:min(440px,100%);max-height:calc(100vh - 32px);overflow-y:auto;padding:20px 18px 16px;transform:rotate(-.6deg);animation:mmIn .28s var(--pop)}
+@keyframes mmIn{from{opacity:0;transform:translateY(14px) rotate(-2deg)}to{opacity:1;transform:rotate(-.6deg)}}
+.memo-card::after{content:"";position:absolute;left:50%;top:-9px;width:86px;height:20px;margin-left:-43px;background:rgba(216,203,176,.85);transform:rotate(2deg);box-shadow:0 2px 4px rgba(0,0,0,.18)}
+.mm-from{font:600 11.5px var(--f-mono);letter-spacing:.14em;color:var(--sig)}
+.mm-title{font:700 18px/1.4 var(--f-serif);color:var(--ink);margin:4px 0 8px;letter-spacing:.04em}
+.mm-body{font:15px/1.85 var(--f-serif);color:var(--ink-2);padding-bottom:12px;border-bottom:1px dashed rgba(122,103,67,.35)}
+.mm-body b{color:var(--ink)}
+.mm-opts{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.mm-opt{display:flex;align-items:flex-start;gap:10px;width:100%;min-height:46px;padding:10px 12px;border-radius:10px;text-align:left;background:rgba(29,34,48,.05);border:1px solid rgba(122,103,67,.25);color:var(--ink)}
+.mm-opt kbd{flex:0 0 auto;width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font:600 12px var(--f-mono);background:var(--ink);color:var(--paper)}
+.mm-opt span{display:flex;flex-direction:column;gap:2px}
+.mm-opt b{font:600 15px/1.4 var(--f-serif)}
+.mm-opt small{font-size:12.5px;color:var(--ink-3)}
+@media (hover:hover){.mm-opt:hover{border-color:rgba(184,54,43,.5)}}
+.mm-res{font:15px/1.85 var(--f-serif);color:var(--ink);padding:4px 2px 8px}
+.mm-res em{font-style:normal;color:var(--sig);font-weight:700}
+.memo-gain{display:inline-block;margin-left:8px;padding:0 8px;border-radius:999px;font:600 12px var(--f-sans);color:var(--tech);background:rgba(47,111,228,.1)}
+.mm-ok{align-self:flex-end;min-width:96px;min-height:42px;padding:8px 18px;border-radius:999px;background:var(--ink);color:var(--paper);font:600 15px var(--f-serif);letter-spacing:.2em}
+
+/* 秘书处页 */
+.wk-today{padding:14px;border-radius:12px;background:rgba(29,34,48,.05);border:1px solid rgba(122,103,67,.2)}
+.wk-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:8px}
+.wk-h b{font:700 16px var(--f-serif);letter-spacing:.2em}
+.wk-h span{font-size:12px;color:var(--ink-3)}
+.wk-row{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.wk-date{font:700 22px/1.2 var(--f-serif);color:var(--ink)}
+.wk-date small,.wk-clock small{display:block;font:500 12px var(--f-sans);color:var(--ink-3);margin-top:2px}
+.wk-clock{font:600 30px/1 var(--f-mono);color:var(--ink);text-align:right}
+.wk-energy{display:flex;align-items:center;gap:8px;margin:12px 0 6px;font-size:13px;color:var(--ink-2)}
+.wk-energy b{font-family:var(--f-mono);color:var(--ink)}
+.wk-energy em{font-style:normal;font-size:12px;color:var(--ink-3)}
+.wk-e{flex:1;height:8px;border-radius:9px;background:rgba(29,34,48,.12);overflow:hidden}
+.wk-e i{display:block;height:100%;border-radius:9px;background:var(--ok)}
+.wk-e.lo i{background:var(--warn)}.wk-e.crit i{background:var(--bad)}
+.wk .btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.wk .btnrow .btn{flex:1;min-width:140px}
+.wk .btnrow .btn.wk-btn{flex-direction:column;gap:1px;min-height:56px;padding:8px 14px}
+.wk .btnrow .btn.wk-btn span{font-size:16px;letter-spacing:.08em}
+.wk .btnrow .btn.wk-btn small{display:block;font-size:11.5px;font-weight:500;opacity:.85}
+.wk .btnrow .btn:disabled{opacity:.4;cursor:not-allowed}
+.wk h3 small{margin-left:8px;font:500 11.5px var(--f-sans);color:var(--ink-3);letter-spacing:.04em}
+.wk-stats{margin-top:6px}
+.wk-stats b small{font:500 11px var(--f-sans);margin-left:2px;color:var(--ink-3)}
+.wk-note{margin-top:10px}
+.wk-stats b.ok{color:var(--ok)}
+.roster{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.rd{display:flex;flex-direction:column;align-items:center;gap:1px;padding:8px 2px;border-radius:10px;background:rgba(29,34,48,.05);border:1px solid transparent}
+.rd b{font-size:11px;color:var(--ink-3);font-weight:600}
+.rd span{font:600 16px var(--f-mono);color:var(--ink)}
+.rd em{font-style:normal;font-size:11px;color:var(--ink-2)}
+.rd.off{background:rgba(29,34,48,.02)}.rd.off span{color:var(--ink-3)}
+.rd.rest{background:rgba(184,54,43,.08)}.rd.rest em{color:var(--sig);font-weight:600}
+.rd.make{background:rgba(227,163,58,.14)}.rd.make em{color:#9A5B10;font-weight:700}
+.rd.now{border-color:var(--tech);box-shadow:0 0 0 2px rgba(47,111,228,.15)}
+.wk-tab{width:100%;border-collapse:collapse;font-size:13px}
+.wk-tab th{text-align:left;font-weight:600;color:var(--ink-3);font-size:11.5px;padding:4px 6px;border-bottom:1px solid rgba(122,103,67,.3)}
+.wk-tab td{padding:6px;border-bottom:1px dashed rgba(122,103,67,.2);color:var(--ink-2);vertical-align:top}
+.wk-tab td:nth-child(3),.wk-tab td:nth-child(4){font-family:var(--f-mono);font-size:12px;white-space:nowrap}
+.mail-item{padding:10px 0;border-bottom:1px dashed rgba(122,103,67,.25)}
+.mi-h{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 10px}
+.mi-h b{font:600 14px var(--f-serif)}
+.mi-h span{font-size:11.5px;color:var(--ink-3)}
+.mi-r{font-size:13px;color:var(--ink-2);margin-top:2px}
+/* 开庭卷宗上的状态一行 */
+.dz-buff b{margin-right:8px;color:#7FE3AE}
+@media (max-width:400px){.wk-clock{font-size:26px}.wk-date{font-size:19px}.rd span{font-size:14px}}

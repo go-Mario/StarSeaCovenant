@@ -15,7 +15,7 @@ const Panels=(function(){
   }
   function close(){stopQuizTimer();byId('panel').classList.remove('on');cur='';qz=null;Hub.refresh();}
   function render(){
-    if(cur==='archive')archive();else if(cur==='bench')bench();else if(cur==='quiz')quiz();else if(cur==='relax')relax();
+    if(cur==='archive')archive();else if(cur==='bench')bench();else if(cur==='quiz')quiz();else if(cur==='relax')relax();else if(cur==='office')office();
   }
   /* ---------------- 档案馆 ---------------- */
   const TABS=[['me','档案'],['laws','法典'],['precs','先例'],['hist','史实'],['achs','成就'],['shop','小卖部'],['set','设置']];
@@ -132,7 +132,7 @@ const Panels=(function(){
   function answer(i){
     const p=BENCH_BY[benchCur];
     const first=!S.judge[p.id];S.judge[p.id]={ch:i};
-    if(first){S.rep+=p.rep;S.dust+=6;unlockLaw(p.law);SFX.gavel();}else SFX.card();
+    if(first){S.rep+=p.rep;S.dust+=6;unlockLaw(p.law);SFX.gavel();Work.spend(30,0,'裁判练习 · '+p.title,'bench');}else SFX.card();
     save();checkAchs();HUD.refresh();bench();
   }
   /* ---------------- 每日速判 ----------------
@@ -170,7 +170,7 @@ const Panels=(function(){
       if(S.daily.last!==dk){
         S.daily.streak=(S.daily.last===yesterdayKey()?(S.daily.streak||0):0)+1;S.daily.last=dk;
         S.daily.score=c;S.daily.best=Math.max(S.daily.best||0,c);S.daily.ids=qz.ids;S.daily.res=qz.res.map(function(r){return r.ok?1:0;});delete S.daily.prog;
-        const dust=c*2+(c===QN?4:0);S.dust+=dust;S.focus=clamp(S.focus+5,0,100);qz.dust=dust;
+        const dust=c*2+(c===QN?4:0);S.dust+=dust;S.focus=clamp(S.focus+5,0,100);qz.dust=dust;Work.spend(15,0,'每日速判','quiz');
         save();checkAchs();HUD.refresh();SFX.gavel();if(dust)setTimeout(SFX.coin,250);
       }
     }else SFX.card();
@@ -239,9 +239,16 @@ const Panels=(function(){
     else if(r&&(e.key==='Enter'||e.key===' ')){e.preventDefault();quizNext();}
   });
   /* ---------------- 休憩舱 ---------------- */
+  /* ---------------- 秘书处：工时与调休（内容在 js/core/work.js） ---------------- */
+  function office(){
+    const sc=byId('panel').querySelector('.pn-body'),top=sc&&byId('panel').classList.contains('on')&&cur==='office'?sc.scrollTop:0;
+    shell('秘书处 · 工时与调休','<div class="wk">'+Work.officeHTML()+'</div>');
+    Work.bindOffice(byId('panel'));
+    const nb=byId('panel').querySelector('.pn-body');if(nb&&top)nb.scrollTop=top;
+  }
   function relax(){
     let b='<div class="rx-top"><div class="rx-focus"><span>精力</span><i><b style="width:'+S.focus+'%"></b></i><em>'+S.focus+'</em></div>'+
-      '<div class="muted small">开庭会消耗精力。精力在 70 以上时开庭，气势多一格。这里的小游戏没有输赢，玩一局能恢复精力（每天前三局恢复得最多）。</div></div>';
+      '<div class="muted small">开庭会消耗精力。精力在 70 以上时开庭，气势多一格。这里的小游戏没有输赢，玩一局能恢复精力（每天前三局恢复得最多，按秘书处的日历算）。</div></div>';
     ['const','sweep','paint'].forEach(function(id){const G=GAMES[id],r=S.games[id];
       b+='<button class="rx-item" data-rx="'+id+'"><span class="rx-ic">'+icon(id==='const'?'ic-star':id==='sweep'?'ic-broom':'ic-orbit')+'</span><span><b>'+G.title+'</b><small>'+G.sub+'</small></span><em>'+(r&&G.badge?G.badge(r):'')+'</em></button>';});
     shell('休憩舱',b);

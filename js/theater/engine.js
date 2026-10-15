@@ -229,12 +229,13 @@ async function startChapter(id){
   CUR=C;
   SFX.tap();MUSIC.setMode('intro');
   ROLE_TAG.me=C.myTag||'本方代理人';ROLE_TAG.meSide=C.mySide||'left';
-  const fresh=(S.focus||0)>=70;
+  const ws=Work.hearingState(),fresh=ws==='fresh'||ws==='rested';/* 精力 70 以上，或调休、年假回来的第一庭：气势多一格 */
   TH={running:true,ch:id,morale:fresh?6:5,mcap:fresh?6:5,standing:clamp(typeof S.standing==='number'?S.standing:3,1,5),flawless:true,evs:(C.startEvs||[]).slice(),
       picks:[],facts:[],resolver:null,typing:false,fullText:'',skipHold:false,crossRes:null,lawCited:false,ending:'verdict',busy:false,fresh:fresh,costDone:false,qLeft:0,impartial:5};
   byId('theater').setAttribute('data-ch',id);byId('theater').setAttribute('data-era',C.era);
-  await chapterCard(C);
+  await chapterCard(C,ws);
   if(!TH.running)return;
+  if(ws==='rested')Work.useRest();
   document.body.classList.add('in-theater');
   byId('theater').classList.add('on');
   byId('thYear').textContent=C.year;
@@ -245,7 +246,7 @@ async function startChapter(id){
   runScript(C.script);
 }
 function chapterUnlocked(id){const i=CH_ORDER.indexOf(id);return i<=0||SAVE.chDone(CH_ORDER[i-1]);}
-function chapterCard(C){
+function chapterCard(C,ws){
   return new Promise(function(res){
     const card=byId('chapterCard');
     const newM=(C.newMech||[]).map(function(m){return '<span class="chip">'+(TIPS[m]?TIPS[m].t:m)+'</span>';}).join('');
@@ -261,7 +262,7 @@ function chapterCard(C){
       '<div class="dz-rule"></div>'+
       row('受理机构',M.court?String(M.court).replace(/\s+/g,''):'')+row('你的身份',C.roleLine)+row('争议焦点',C.issue)+row('适用规则',M.law)+
       (newM?'<div class="dz-new"><span>本章新机制</span>'+newM+'</div>':'')+
-      (TH.fresh?'<div class="dz-buff">精力充沛：气势多一格</div>':'<div class="dz-buff dim">精力不足 70，本章没有额外气势。去休憩舱放松一下会好些。</div>')+
+      '<div class="dz-buff'+(TH.fresh?'':' dim')+'">'+(TH.fresh?'<b>气势 +1</b>':'')+Work.stateLine(ws)+'</div>'+
       '<div class="dz-btns"><button class="btn ghost sm" id="ccBack">返回</button><button class="btn dz-go" id="ccGo">开 庭</button></div>'+
       '<i class="dz-c tl"></i><i class="dz-c tr"></i><i class="dz-c bl"></i><i class="dz-c br"></i></div>';
     SFX.whoosh();

@@ -13,7 +13,7 @@
    ===================================================================== */
 /* 中央的星海仲裁院同时是档案馆：你的档案、法典、先例、史实卡都存在这里 */
 const STATION={id:'station',name:'星海仲裁院',en:'STELLAR ARBITRATION COURT',x:0,y:40,r:24,look:'amber',music:'retro',
-  line:'你的档案、法典、先例和史实卡，都存在这里。'};
+  line:'秘书处、你的档案、法典、先例和史实卡，都在这里。'};
 const WORLDS=[
  {id:'theater',name:'开庭剧场',en:'THE TRIBUNAL',x:0,y:-250,r:56,look:'gold',music:'frontier',
   line:'六个案子，从 1980 年一直排到 2077 年。'},
@@ -689,13 +689,14 @@ const PlanetView=(function(){
     if(w.id==='bench'){const n=Object.keys(S.judge||{}).length,dd=S.daily&&S.daily.last===todayKey();return [
       {k:'panel',id:'quiz',ic:'ic-gavel',y:dd?('今日 '+(S.daily.score!=null?S.daily.score+'/5':'已判')):'今日',t:'每日速判',s:'五句话判对错，答完看依据',st:dd?'done':'open',tag:''},
       {k:'panel',id:'bench',ic:'ic-scale',y:n+'/5',t:'五个小案子',s:'没有标准答案，只记你的裁判偏向',st:n>=5?'done':'open',tag:''}];}
-    if(w.id==='station')return [
+    if(w.id==='station'){const W=Work.init(),t=Work.dayType(W.day);return [
+      {k:'panel',id:'office',ic:'ic-clock',y:Work.dateStr(W.day)+' '+Work.clock(W.min),t:'秘书处',s:'工时、加班与调休',st:'open',tag:W.ot>=480?'可调休':''},
       {k:'arch',id:'me',ic:'ic-file',y:'',t:'我的档案',s:'结案记录与裁判偏向',st:'open'},
       {k:'arch',id:'laws',ic:'ic-law',y:S.laws.length+'/'+LAWS.length,t:'法典',s:'办一个案子，记一条法',st:'open'},
       {k:'arch',id:'precs',ic:'ic-book',y:String(S.precs.length),t:'先例',s:'以裁决结案才会留下',st:'open'},
       {k:'arch',id:'hist',ic:'ic-star',y:S.hist.length+'/'+HISTORY.length,t:'史实卡',s:'航迹上的每个标记',st:'open'},
       {k:'arch',id:'achs',ic:'ic-star',y:S.achs.length+'/'+ACHS.length,t:'成就',s:'',st:'open'},
-      {k:'arch',id:'shop',ic:'ic-dust',y:String(S.dust),t:'小卖部',s:'只卖方便和好看',st:'open'}];
+      {k:'arch',id:'shop',ic:'ic-dust',y:String(S.dust),t:'小卖部',s:'只卖方便和好看',st:'open'}];}
     return [];
   }
   const GAME_IC={sat:'ic-sat',orbit:'ic-orbit',station:'ic-station',lander:'ic-moon',sling:'ic-sling',const:'ic-star',sweep:'ic-broom',paint:'ic-orbit'};
@@ -805,6 +806,7 @@ const HUD={
     const hh=byId('hudHints');if(hh)hh.textContent=S.hints;
     const ff=byId('hudFocusBar');if(ff){ff.style.width=clamp(S.focus,0,100)+'%';ff.parentNode.parentNode.classList.toggle('low',S.focus<70);}
     const fv=byId('hudFocusV');if(fv)fv.textContent=S.focus;
+    Work.hud();
     const av=byId('hudAv');if(av)av.innerHTML=avatarSVG('me');
     const nx=nextCh(),ct=byId('ctaT');
     if(ct){ct.textContent=nx?(CHAPTERS[nx].year+' · '+CHAPTERS[nx].title):'六案已结 · 重温任一案';}
@@ -825,6 +827,7 @@ const Hub=(function(){
     },
     refresh(justDone){
       if(!built)return;StarMap.refresh();PlanetView.refresh();HUD.refresh();
+      setTimeout(Work.tick,700);/* 秘书处的来信和攒下的提示，回到星图时再说 */
       if(justDone&&PlanetView.current()==='theater'){const nx=nextCh();if(nx)setTimeout(function(){const b=$('#pvNodes .pn[data-id="'+nx+'"]');if(b){b.classList.add('flash');SFX.chime(3);}},500);}
     },
     /* 进入主界面：第一次来，先看全貌，再把镜头推向开庭剧场 */

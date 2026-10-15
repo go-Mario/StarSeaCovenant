@@ -10,7 +10,8 @@ const Games=(function(){
   const stage=function(){return byId('gmStage');};
   function setScore(t){byId('gmScore').innerHTML=t||'';}
   function relaxGain(){
-    const k='rx-'+todayKey();S.rxCount=S.rxCount||{};const n=S.rxCount[k]||0;S.rxCount[k]=n+1;
+    /* “每天前三局”按秘书处的日历算：下班睡一觉，就又是新的一天 */
+    const k='rx-w'+Work.today();S.rxCount=S.rxCount||{};const n=S.rxCount[k]||0;S.rxCount={};S.rxCount[k]=n+1;
     return n<3?18:n<6?8:3;
   }
   function open(id){
@@ -50,7 +51,8 @@ const Games=(function(){
     if(r.rec)Object.assign(rec,r.rec);
     rec.plays=(rec.plays||0)+1;
     let dust=r.dust||0,focus=0;
-    if(cur.kind==='relax'){focus=relaxGain();S.focus=clamp(S.focus+focus,0,100);}
+    if(cur.kind==='relax'){focus=relaxGain();S.focus=clamp(S.focus+focus,0,100);Work.spend(15,0,'休憩舱 · '+cur.title,'break');}
+    else Work.spend(30,0,'资料室 · '+cur.title,'study');
     S.dust+=dust;save();checkAchs();HUD.refresh();
     const box=byId('gmResult');
     box.innerHTML='<div class="paper gm-in"><div class="gm-k">'+(r.ok===false?'这一局':'完成')+'</div><h3>'+(r.title||cur.title)+'</h3>'+
