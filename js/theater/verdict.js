@@ -105,6 +105,7 @@ async function finishChapter(d){
   const precOk=!C.arbiter||!TH.award||(TH.award.res[C.precIssue||0]&&TH.award.res[C.precIssue||0].q.k==='solid');
   if(!settled&&C.prec&&S.precs.indexOf(C.prec)<0){if(precOk){S.precs.push(C.prec);newPrec=PREC_BY[C.prec];}else precNote='这一份裁决的关键争点说理不够扎实，没有写入先例。重来一次，可以争取写进去。';}
   S.standing=TH.standing;S.rep+=rep;S.dust+=dust;S.focus=clamp(S.focus-20,0,100);
+  Work.afterHearing(C);/* 一庭三小时，记进工时单 */
   (C.hist||[]).forEach(function(h){SAVE.seeHist(h);});
   save();checkAchs();
   if(id==='ch6'){await Ending.play();}

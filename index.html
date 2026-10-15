@@ -16,6 +16,7 @@
 <link rel="stylesheet" href="css/games.css">
 <link rel="stylesheet" href="css/panels.css">
 <link rel="stylesheet" href="css/pen.css">
+<link rel="stylesheet" href="css/work.css">
 <link rel="stylesheet" href="css/intro.css">
 </head>
 <body>
@@ -58,6 +59,7 @@
   <symbol id="ic-scale" viewBox="0 0 24 24"><path d="M12 4v16M6 20h12M5 7h14M5 7l-2.5 6h5zM19 7l-2.5 6h5z"/></symbol>
   <symbol id="ic-pen" viewBox="0 0 24 24"><path d="M4 20l4-1L19 8l-3-3L5 16zM14 7l3 3"/></symbol>
   <symbol id="ic-broom" viewBox="0 0 24 24"><path d="M19 3l-7 7M9 10l5 5-4 6-7-7z"/></symbol>
+  <symbol id="ic-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
   <symbol id="ic-archive" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v11h14V9M10 13h4"/></symbol>
   <symbol id="ic-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="1.5"/></symbol>
   <symbol id="ic-leaf" viewBox="0 0 24 24"><path d="M5 19C5 10 11 5 20 4c0 9-5 15-14 15zM5 19l8-8"/></symbol>
@@ -106,7 +108,7 @@
   <header id="hubHud">
     <button class="hud-me" id="hudMe"><span class="hud-av" id="hudAv"></span><span class="hud-who"><b id="hudName">简</b><small id="hudRank">见习仲裁员</small></span></button>
     <div class="hud-sp"></div>
-    <div class="hud-focus" title="精力：70 以上开庭多一格气势"><span>精力</span><i><b id="hudFocusBar"></b></i><em id="hudFocusV">80</em></div>
+    <button class="hud-focus" id="hudWork" title="秘书处 · 工时与调休（精力 70 以上开庭多一格气势）"><span class="hw-c" id="hudClock"></span><span class="hw-f"><span>精力</span><i><b id="hudFocusBar"></b></i><em id="hudFocusV">80</em></span></button>
     <button class="hud-dust" id="hudDustBtn" title="星尘"><svg class="ic fill"><use href="#ic-dust"/></svg><b id="hudDust">0</b><span class="hud-h"><svg class="ic"><use href="#ic-bulb"/></svg><b id="hudHints">0</b></span></button>
     <button class="iconbtn btn-snd" aria-label="音效"></button>
     <button class="iconbtn btn-bgm" aria-label="音乐"></button>
@@ -124,6 +126,7 @@
 <!-- ===================== 面板 / 小游戏 ===================== -->
 <div id="panel" class="layer"></div>
 <div id="pen" class="layer"></div>
+<div id="memo" class="layer"><div class="memo-card paper" id="memoCard"></div></div>
 <div id="game" class="layer">
   <div class="gm-head"><button class="iconbtn" id="gmBack"><svg class="ic"><use href="#ic-back"/></svg></button><div class="gm-t"><b id="gmTitle"></b><span id="gmSub"></span></div><div class="gm-score" id="gmScore"></div></div>
   <div id="gmStage"></div>
@@ -186,6 +189,7 @@
 <script src="js/core/audio.js"></script>
 <script src="js/core/fx.js"></script>
 <script src="js/core/economy.js"></script>
+<script src="js/core/work.js"></script>
 <script src="js/art/portraits.js"></script>
 <script src="js/art/scenes.js"></script>
 <script src="js/data/glossary.js"></script>
