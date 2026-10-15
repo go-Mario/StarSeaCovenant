@@ -14,7 +14,7 @@ const {chromium}=PW;const OUT=process.argv[2]||__dirname+'/out/map';
     await p.screenshot({path:OUT+'/'+vp.n+'-2far.png'});
     await p.evaluate(()=>{StarMap.fit(false);StarMap.zoomBy(2.2);});await p.waitForTimeout(700);
     await p.screenshot({path:OUT+'/'+vp.n+'-3near.png'});
-    for(const w of ['theater','leo','moon','relax','bench','archive']){
+    for(const w of ['theater','leo','moon','relax','bench','station']){
       await p.evaluate(()=>StarMap.fit(false));await p.waitForTimeout(200);
       await p.evaluate(id=>StarMap.land(id),w);await p.waitForTimeout(1700);
       await p.screenshot({path:OUT+'/'+vp.n+'-4-'+w+'.png'});

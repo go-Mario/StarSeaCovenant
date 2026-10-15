@@ -8,55 +8,78 @@ GAMES.orbit=(function(){
   let stopF=null;
   function start(host,api){
     const C=stageCanvas(host),ctx=C.ctx,W=C.w(),H=C.h();
-    const bg=starfield(W,H,23,260);
-    const cx=W/2,cy=H*.52,er=Math.min(W,H)*.14,rr=Math.min(W,H)*.38;
+    const bg=GameArt.sky(W,H,{seed:23,band:{x:.5,y:.3,a:-.62,w:.12,al:.11},neb:[[.15,.15,.5,'60,80,170',.12],[.9,.85,.5,'120,60,150',.1]]});
+    const cx=W/2,cy=H*.52,er=Math.min(W,H)*.14,rr=Math.min(W,H)*.38,TILT=.62;
     const st={t:0,left:15,score:0,marks:[],spawn:0,over:false,claimed:[],flash:[]};
+    /* 低轨道上来来往往的卫星，只是背景 */
+    const leo=[];for(let i=0;i<14;i++)leo.push({a:Math.random()*6.283,r:er*(1.18+Math.random()*.35),tilt:(Math.random()-.5)*1.4,sp:.5+Math.random()*.7});
+    const pos=function(a){return {x:cx+Math.cos(a)*rr,y:cy+Math.sin(a)*rr*TILT,back:Math.sin(a)<0};};
     function spawn(){
       const used=st.marks.map(function(m){return m.a;}).concat(st.claimed);
       let a=0,tries=0;do{a=Math.random()*6.283;tries++;}while(tries<20&&used.some(function(u){return Math.abs(((u-a+9.42)%6.283)-3.14)<.32;}));
       const r=Math.random(),kind=r<.66?'gold':r<.9?'red':'blue';
       const life=(kind==='gold'?Math.max(.55,1.25-st.score*.05):1.2+Math.random()*.6);
-      st.marks.push({a:a,kind:kind,life:life,max:life});
+      st.marks.push({a:a,kind:kind,life:life,max:life,born:st.t});
     }
     function tap(e){
       if(st.over)return;
       const rect=C.c.getBoundingClientRect(),x=e.clientX-rect.left,y=e.clientY-rect.top;
       let hit=null,bd=1e9;
-      st.marks.forEach(function(m){const mx=cx+Math.cos(m.a)*rr,my=cy+Math.sin(m.a)*rr*.62,d=Math.hypot(mx-x,my-y);if(d<34&&d<bd){bd=d;hit=m;}});
+      st.marks.forEach(function(m){const p=pos(m.a),d=Math.hypot(p.x-x,p.y-y);if(d<34&&d<bd){bd=d;hit=m;}});
       if(!hit){SFX.tap();return;}
       st.marks.splice(st.marks.indexOf(hit),1);
-      const mx=cx+Math.cos(hit.a)*rr,my=cy+Math.sin(hit.a)*rr*.62;
-      if(hit.kind==='red'){st.over=true;SFX.error();buzz([60,40,60]);st.flash.push({x:mx,y:my,t:0,c:'#FF6A52'});setTimeout(function(){done('interference');},700);return;}
+      const p=pos(hit.a);
+      if(hit.kind==='red'){st.over=true;SFX.error();buzz([60,40,60]);st.flash.push({x:p.x,y:p.y,t:0,c:'255,106,82',txt:'有害干扰'});setTimeout(function(){done('interference');},700);return;}
       const pts=hit.kind==='blue'?2:1;st.score+=pts;st.claimed.push(hit.a);
-      SFX.chime(st.score);buzz(10);st.flash.push({x:mx,y:my,t:0,c:hit.kind==='blue'?'#5FA9FF':'#F6C35B'});
+      SFX.chime(st.score);buzz(10);st.flash.push({x:p.x,y:p.y,t:0,c:hit.kind==='blue'?'95,169,255':'246,195,91',txt:'+'+pts});
       api.setScore('<b>'+st.score+'</b> 个轨位');
     }
     C.c.addEventListener('pointerdown',tap);
     api.setScore('<b>0</b> 个轨位');
+    function ring(back){
+      /* 静止轨道：后半圈暗一些，前半圈亮一些，看得出远近 */
+      ctx.lineWidth=6;ctx.strokeStyle='rgba(95,169,255,'+(back?.05:.09)+')';ctx.beginPath();ctx.ellipse(cx,cy,rr,rr*TILT,0,back?Math.PI:0,back?Math.PI*2:Math.PI);ctx.stroke();
+      ctx.lineWidth=1.2;ctx.strokeStyle='rgba(140,195,255,'+(back?.28:.55)+')';ctx.setLineDash([2,6]);ctx.lineDashOffset=-st.t*6;ctx.beginPath();ctx.ellipse(cx,cy,rr,rr*TILT,0,back?Math.PI:0,back?Math.PI*2:Math.PI);ctx.stroke();ctx.setLineDash([]);
+    }
+    function drawSlot(a){const p=pos(a),sc=p.back?.8:1;GameArt.soft(ctx,p.x,p.y,14*sc,'246,195,91',.35);GameArt.satellite(ctx,p.x,p.y,.62*sc,a+1.5708);}
+    function drawMark(m){
+      const p=pos(m.a),k=m.life/m.max,sc=p.back?.85:1,age=Math.min(1,(st.t-m.born)*6);
+      const col=m.kind==='gold'?'246,195,91':m.kind==='red'?'255,106,82':'95,169,255';
+      ctx.save();ctx.translate(p.x,p.y);ctx.scale(sc*age,sc*age);
+      GameArt.soft(ctx,0,0,30+Math.sin(st.t*8)*3,col,.45);
+      ctx.strokeStyle='rgba('+col+',.35)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(0,0,19,0,7);ctx.stroke();
+      ctx.strokeStyle='rgba('+col+',1)';ctx.lineWidth=2.4;ctx.lineCap='round';ctx.beginPath();ctx.arc(0,0,19,-1.5708,-1.5708+6.283*k);ctx.stroke();
+      if(m.kind==='red'){GameArt.satellite(ctx,0,0,.55,m.a+1.5708,'#E8775A','#7A2A22');ctx.strokeStyle='rgba(255,106,82,.95)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-13,13);ctx.lineTo(13,-13);ctx.stroke();}
+      else{ctx.fillStyle='rgba('+col+',1)';ctx.beginPath();ctx.arc(0,0,6.5,0,7);ctx.fill();ctx.fillStyle='rgba(255,255,255,.85)';ctx.beginPath();ctx.arc(-1.5,-1.5,2.2,0,7);ctx.fill();}
+      ctx.restore();
+      if(m.kind==='blue')GameArt.caption(ctx,'收回',p.x,p.y-32,{size:11,color:'#BFE0FF',bg:.5,line:.15});
+    }
     stopF=loop(function(dt){
       if(!st.over){st.t+=dt;st.left=Math.max(0,15-st.t);st.spawn-=dt;
         if(st.spawn<=0){spawn();st.spawn=Math.max(.32,.8-st.t*.025);}
         st.marks.forEach(function(m){m.life-=dt;});st.marks=st.marks.filter(function(m){return m.life>0;});
         if(st.left<=0){st.over=true;setTimeout(function(){done('time');},300);}}
       ctx.drawImage(bg,0,0,W,H);
-      const g=ctx.createRadialGradient(cx-er*.3,cy-er*.4,er*.1,cx,cy,er);g.addColorStop(0,'#8CC4F2');g.addColorStop(.5,'#2F6FE4');g.addColorStop(1,'#0E2A66');
-      ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,er,0,7);ctx.fill();ctx.strokeStyle='rgba(159,211,255,.6)';ctx.lineWidth=2;ctx.stroke();
-      ctx.strokeStyle='rgba(95,169,255,.35)';ctx.setLineDash([3,7]);ctx.lineWidth=1.4;ctx.beginPath();ctx.ellipse(cx,cy,rr,rr*.62,0,0,7);ctx.stroke();ctx.setLineDash([]);
-      st.claimed.forEach(function(a){const x=cx+Math.cos(a)*rr,y=cy+Math.sin(a)*rr*.62;ctx.fillStyle='#F6C35B';ctx.fillRect(x-4,y-3,8,6);ctx.fillStyle='#2D5FA8';ctx.fillRect(x-12,y-2,7,4);ctx.fillRect(x+5,y-2,7,4);});
-      st.marks.forEach(function(m){
-        const x=cx+Math.cos(m.a)*rr,y=cy+Math.sin(m.a)*rr*.62,k=m.life/m.max;
-        const col=m.kind==='gold'?'246,195,91':m.kind==='red'?'255,106,82':'95,169,255';
-        ctx.fillStyle='rgba('+col+',.22)';ctx.beginPath();ctx.arc(x,y,18+(1-k)*6,0,7);ctx.fill();
-        ctx.fillStyle='rgba('+col+',1)';ctx.beginPath();ctx.arc(x,y,9,0,7);ctx.fill();
-        ctx.strokeStyle='rgba('+col+',.9)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,15,-1.57,-1.57+6.283*k);ctx.stroke();
-        if(m.kind==='red'){ctx.strokeStyle='#5A1A12';ctx.lineWidth=2.4;ctx.beginPath();ctx.moveTo(x-6,y+6);ctx.lineTo(x+6,y-6);ctx.stroke();}
-        if(m.kind==='blue'){ctx.fillStyle='#fff';ctx.font='700 11px sans-serif';ctx.textAlign='center';ctx.fillText('收回',x,y-22);}
-      });
-      st.flash=st.flash.filter(function(f){f.t+=dt;return f.t<.5;});
-      st.flash.forEach(function(f){ctx.strokeStyle=f.c;ctx.globalAlpha=1-f.t*2;ctx.lineWidth=3;ctx.beginPath();ctx.arc(f.x,f.y,10+f.t*60,0,7);ctx.stroke();});ctx.globalAlpha=1;
-      ctx.fillStyle='#fff';ctx.font='600 15px '+getComputedStyle(document.body).fontFamily;ctx.textAlign='center';
-      ctx.fillText('剩余 '+st.left.toFixed(1)+' 秒',cx,H*.1);
-      ctx.fillStyle='rgba(234,240,251,.7)';ctx.font='12px sans-serif';ctx.fillText('金色＝空轨位　红色＝别人在用　蓝色＝闲置收回',cx,H-24);
+      ring(true);
+      st.claimed.forEach(function(a){if(Math.sin(a)<0)drawSlot(a);});
+      st.marks.forEach(function(m){if(Math.sin(m.a)<0)drawMark(m);});
+      /* 地球与低轨道的小卫星 */
+      GameArt.soft(ctx,cx,cy,er*1.9,'70,140,255',.18);
+      leo.forEach(function(o){o.a+=o.sp*dt*.5;if(Math.sin(o.a)<0){const x=cx+Math.cos(o.a)*o.r,y=cy+Math.sin(o.a)*o.r*.35+Math.cos(o.a)*o.r*o.tilt*.3;ctx.fillStyle='rgba(220,230,255,.5)';ctx.fillRect(x-1,y-1,2,2);}});
+      GameArt.drawPlanet(ctx,'earth',cx,cy,er,9);
+      leo.forEach(function(o){if(Math.sin(o.a)>=0){const x=cx+Math.cos(o.a)*o.r,y=cy+Math.sin(o.a)*o.r*.35+Math.cos(o.a)*o.r*o.tilt*.3;ctx.fillStyle='rgba(235,240,255,.85)';ctx.fillRect(x-1,y-1,2,2);}});
+      ring(false);
+      st.claimed.forEach(function(a){if(Math.sin(a)>=0)drawSlot(a);});
+      st.marks.forEach(function(m){if(Math.sin(m.a)>=0)drawMark(m);});
+      st.flash=st.flash.filter(function(f){f.t+=dt;return f.t<.7;});
+      st.flash.forEach(function(f){const k=1-f.t/.7;ctx.strokeStyle='rgba('+f.c+','+k+')';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(f.x,f.y,12+f.t*70,0,7);ctx.stroke();
+        ctx.globalAlpha=k;GameArt.glowText(ctx,f.txt,f.x,f.y-30-f.t*30,f.txt.length>2?15:18,'rgb('+f.c+')',10);ctx.globalAlpha=1;});
+      /* 倒计时：一条细金线 + 秒数 */
+      const bw=Math.min(240,W*.6),bx=cx-bw/2,by=H*.1+14,k=st.left/15;
+      ctx.fillStyle='rgba(255,255,255,.1)';ctx.fillRect(bx,by,bw,3);
+      ctx.fillStyle=k<.25?'#FF8A72':'#E6B34D';ctx.fillRect(bx,by,bw*k,3);GameArt.soft(ctx,bx+bw*k,by+1.5,8,k<.25?'255,138,114':'246,195,91',.9);
+      ctx.font=GameArt.mono(20,600);ctx.textAlign='center';ctx.textBaseline='alphabetic';ctx.fillStyle=k<.25?'#FF8A72':'#F3EDE1';ctx.fillText(st.left.toFixed(1),cx,H*.1+2);
+      GameArt.caption(ctx,'金色＝空轨位　红色＝别人在用　蓝色＝闲置收回',cx,H-30,{size:12});
     });
     function done(why){
       if(stopF)stopF();

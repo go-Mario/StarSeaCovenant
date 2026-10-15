@@ -11,7 +11,9 @@
    画法：星空、星球、航迹画在一块 canvas 上（星球预先画成贴图）；
    名牌是普通 DOM，文字清楚，也方便点；降落后的星球表面另起一层。
    ===================================================================== */
-const STATION={id:'station',name:'星海仲裁院',en:'STELLAR ARBITRATION COURT',x:0,y:40,r:24};
+/* 中央的星海仲裁院同时是档案馆：你的档案、法典、先例、史实卡都存在这里 */
+const STATION={id:'station',name:'星海仲裁院',en:'STELLAR ARBITRATION COURT',x:0,y:40,r:24,look:'amber',music:'retro',
+  line:'你的档案、法典、先例和史实卡，都存在这里。'};
 const WORLDS=[
  {id:'theater',name:'开庭剧场',en:'THE TRIBUNAL',x:0,y:-250,r:56,look:'gold',music:'frontier',
   line:'六个案子，从 1980 年一直排到 2077 年。'},
@@ -22,11 +24,9 @@ const WORLDS=[
  {id:'relax',name:'休憩舱',en:'REST POD',x:-255,y:255,r:30,look:'teal',music:'relax',
   line:'不计输赢。玩一会儿，精力会回来。',items:['const','sweep','paint']},
  {id:'bench',name:'见习裁判席',en:'TRAINING BENCH',x:255,y:255,r:30,look:'violet',music:'court',
-  line:'五个小案子，没有标准答案。每天还有一案。'},
- {id:'archive',name:'档案馆',en:'ARCHIVE',x:0,y:440,r:32,look:'amber',music:'retro',
-  line:'法典、先例、史实卡，还有你的裁判记录。'}
+  line:'五个小案子，没有标准答案。每天还有一案。'}
 ];
-const WORLD_BY={};WORLDS.forEach(function(w){WORLD_BY[w.id]=w;});
+const WORLD_BY={station:STATION};WORLDS.forEach(function(w){WORLD_BY[w.id]=w;});
 /* 航迹：一个椭圆，按年份顺时针走 300° */
 const TRAIL={cx:0,cy:70,rx:560,ry:640,y0:1957,y1:2080,a0:-160,a1:140};
 function trailPt(y){
@@ -50,7 +50,6 @@ function worldHint(w){
   if(w.id==='theater'){const nx=nextCh();return nx?('下一案 · '+CHAPTERS[nx].year+' '+CHAPTERS[nx].title):'六案已结 · 可以重开';}
   if(w.items){const n=w.items.filter(function(id){return S.games[id]&&S.games[id].plays;}).length;return n+'/'+w.items.length+(w.id==='relax'?' · 恢复精力':' · 已玩过');}
   if(w.id==='bench'){return '已裁 '+Object.keys(S.judge||{}).length+'/5';}
-  if(w.id==='archive'){return '法典 '+S.laws.length+'/'+LAWS.length+' · 先例 '+S.precs.length;}
   return '';
 }
 
@@ -63,7 +62,8 @@ const MapArt=(function(){
     moon:{a:'#EDEDE8',b:'#9C9C96',c:'#3A3A38',atm:'220,220,230'},
     teal:{a:'#A8F5E2',b:'#2E9E8E',c:'#0B3438',atm:'120,240,210',bands:['rgba(255,255,255,.10)','rgba(10,60,60,.25)']},
     violet:{a:'#D2C2FF',b:'#6A4BC4',c:'#1E1446',atm:'190,160,255',bands:['rgba(255,255,255,.12)','rgba(40,20,90,.3)','rgba(200,170,255,.18)']},
-    amber:{a:'#FBE3B0',b:'#C9813E',c:'#4A240C',atm:'255,190,120',bands:['rgba(90,40,10,.22)','rgba(255,235,200,.16)']}
+    amber:{a:'#FBE3B0',b:'#C9813E',c:'#4A240C',atm:'255,190,120',bands:['rgba(90,40,10,.22)','rgba(255,235,200,.16)']},
+    mars:{a:'#F6C29A',b:'#C2643A',c:'#3E170C',atm:'255,170,130'}
   };
   /* 画一颗星球到 (0,0)，半径 R。光从左上来 */
   function drawPlanet(g,look,R,seed){
@@ -86,6 +86,10 @@ const MapArt=(function(){
         g.fillStyle='rgba(60,60,58,.28)';g.beginPath();g.arc(cx,cy,rr,0,7);g.fill();
         g.strokeStyle='rgba(255,255,255,.25)';g.lineWidth=Math.max(.6,rr*.12);g.beginPath();g.arc(cx+rr*.1,cy+rr*.1,rr,Math.PI*.9,Math.PI*1.7);g.stroke();}
       g.fillStyle='rgba(70,70,70,.25)';g.beginPath();g.ellipse(-R*.2,-R*.15,R*.45,R*.3,.4,0,7);g.fill();
+    }
+    if(look==='mars'){
+      for(let i=0;i<9;i++){g.fillStyle='rgba(90,35,20,'+(.18+rnd()*.2).toFixed(2)+')';g.beginPath();g.ellipse((rnd()-.5)*R*1.5,(rnd()-.3)*R*1.2,R*(.12+rnd()*.3),R*(.05+rnd()*.12),rnd()*3,0,7);g.fill();}
+      g.fillStyle='rgba(255,250,245,.75)';g.beginPath();g.ellipse(-R*.05,-R*.9,R*.32,R*.12,0,0,7);g.fill();
     }
     if(look==='teal'){g.strokeStyle='rgba(160,255,200,.45)';g.lineWidth=R*.08;g.beginPath();g.ellipse(0,-R*.82,R*.7,R*.2,0,0,Math.PI);g.stroke();}
     if(look==='amber'){g.strokeStyle='rgba(90,40,10,.25)';g.lineWidth=Math.max(.6,R*.02);for(let i=-4;i<=4;i++){g.beginPath();g.ellipse(0,0,R*Math.cos(i/5),R,0,0,7);g.stroke();}}
@@ -195,7 +199,7 @@ const MapArt=(function(){
     for(let i=0;i<3200;i++){const x=(R()-.5)*W*1.8,y=(R()+R()+R()-1.5)*S(420);g.fillStyle='rgba(225,225,255,'+(R()*.35+.05).toFixed(2)+')';g.fillRect(x,y,1,1);}
     g.strokeStyle='rgba(3,4,10,.45)';g.lineWidth=S(110);try{g.filter='blur(6px)';}catch(e){}g.beginPath();g.moveTo(-W,S(20));g.bezierCurveTo(-W*.3,-S(80),W*.2,S(90),W,-S(20));g.stroke();try{g.filter='none';}catch(e){}
     g.restore();
-    [[0,-250,520,'rgba(230,180,90,.10)'],[-290,-40,420,'rgba(70,130,255,.10)'],[290,-40,380,'rgba(170,170,200,.07)'],[-255,255,330,'rgba(60,200,180,.09)'],[255,255,330,'rgba(150,110,240,.09)'],[0,440,340,'rgba(230,150,80,.08)'],[0,40,620,'rgba(60,90,180,.10)']].forEach(function(n){
+    [[0,-250,520,'rgba(230,180,90,.10)'],[-290,-40,420,'rgba(70,130,255,.10)'],[290,-40,380,'rgba(170,170,200,.07)'],[-255,255,330,'rgba(60,200,180,.09)'],[255,255,330,'rgba(150,110,240,.09)'],[0,40,620,'rgba(60,90,180,.10)'],[0,40,260,'rgba(230,170,90,.08)']].forEach(function(n){
       const gr=g.createRadialGradient(X(n[0]),Y(n[1]),0,X(n[0]),Y(n[1]),S(n[2]));gr.addColorStop(0,n[3]);gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect(0,0,W,H);});
     return {c:c,x0:-2400,y0:-1800,w:4800,h:3600};
   }
@@ -258,7 +262,7 @@ const StarMap=(function(){
   }
   /* 全貌：把六颗星和名牌都框进屏幕（上留 HUD，下留底栏） */
   function fitView(){
-    const top=80,bot=110,x0=-380,x1=380,y0=-340,y1=540;
+    const top=80,bot=110,x0=-380,x1=380,y0=-340,y1=390;
     const z=clamp(Math.min((W-24)/(x1-x0),(H-top-bot)/(y1-y0)),minZ,1.25);
     return {x:(x0+x1)/2,y:(y0+y1)/2-((top-bot)/2)/z,z:z};
   }
@@ -401,7 +405,7 @@ const StarMap=(function(){
     const nx=nextCh();
     [STATION].concat(WORLDS).forEach(function(w){
       const el=$('.wl[data-w="'+w.id+'"]',labels);if(!el)return;
-      el.querySelector('em').textContent=w.id==='station'?(S.profile.name+' · '+rankOf(S.rep)):worldHint(w);
+      el.querySelector('em').textContent=w.id==='station'?('档案馆 · '+S.profile.name+' · '+rankOf(S.rep)):worldHint(w);
       el.classList.toggle('next',w.id==='theater'&&!!nx);
     });
     dirty=true;
@@ -454,7 +458,6 @@ const StarMap=(function(){
       if(suppressClick)return;
       const el=e.target.closest('.wl');if(!el)return;
       const id=el.getAttribute('data-w');SFX.tap();
-      if(id==='station'){Panels.open('archive','me');return;}
       land(id);
     });
   }
@@ -545,7 +548,7 @@ const PlanetView=(function(){
     if(w.id==='bench'){const n=Object.keys(S.judge||{}).length;return [
       {k:'panel',id:'bench',ic:'ic-gavel',y:'今日',t:'每日一案',s:'每天换一个，答完有星尘',st:S.daily&&S.daily.last===todayKey()?'done':'open',tag:''},
       {k:'panel',id:'bench',ic:'ic-scale',y:n+'/5',t:'五个小案子',s:'抢轨位、沙漠里的返回舱、火星上的旗子……',st:n>=5?'done':'open',tag:''}];}
-    if(w.id==='archive')return [
+    if(w.id==='station')return [
       {k:'arch',id:'me',ic:'ic-file',y:'',t:'我的档案',s:'结案记录与裁判偏向',st:'open'},
       {k:'arch',id:'laws',ic:'ic-law',y:S.laws.length+'/'+LAWS.length,t:'法典',s:'办一个案子，记一条法',st:'open'},
       {k:'arch',id:'precs',ic:'ic-book',y:String(S.precs.length),t:'先例',s:'以裁决结案才会留下',st:'open'},

@@ -68,7 +68,7 @@ const Panels=(function(){
       b+='<div class="set-row"><span>音乐</span><button class="btn sm ghost" id="stBgm">'+(S.bgm?'开':'关')+'</button></div>';
       b+='<div class="set-row"><span>文字速度</span><button class="btn sm ghost" id="stSpd">'+(S.textSpeed==='fast'?'快':'标准')+'</button></div>';
       b+='<div class="set-row"><span>开场影像</span><button class="btn sm ghost" id="stIntro">再看一遍</button></div>';
-      b+='<h3>关于</h3><div class="small">真实的是法，虚构的是国。<br><i>The law is real. The nations are fictional.</i><br>游戏里引用的条约和史实都是真的；案件里的国家、公司和人物是虚构的。每章结尾的“现实原型”会说明哪些地方做了改动。<br><br>美术为程序绘制的矢量与画布图形，音乐和音效由浏览器实时合成，开场影像为原作者提供的素材。没有使用第三方受版权保护的角色、图像或音乐。</div>';
+      b+='<h3>关于</h3><div class="small">真实的是法，虚构的是国。<br><i>The law is real. The nations are fictional.</i><br>游戏里引用的条约和史实都是真的；案件里的国家、公司和人物是虚构的。每章结尾的“现实原型”会说明哪些地方做了改动。</div>';
       b+='<h3>存档</h3><div class="btnrow"><button class="btn sm red" id="stReset">清空存档</button></div>';
     }
     shell('档案馆',b,tabs);

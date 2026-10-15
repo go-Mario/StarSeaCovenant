@@ -77,7 +77,7 @@
         if(k==='+'||k==='='){StarMap.zoomBy(1.4);return;}
         if(k==='-'||k==='_'){StarMap.zoomBy(1/1.4);return;}
         if(k==='0'){StarMap.fit(true);return;}
-        if(/^[1-6]$/.test(k)){StarMap.land(WORLDS[+k-1].id);return;}
+        if(/^[1-6]$/.test(k)){StarMap.land((WORLDS[+k-1]||STATION).id);return;}
         if(k==='Enter'){Hub.goNext();return;}
       }
     }

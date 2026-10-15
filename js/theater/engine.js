@@ -50,6 +50,7 @@ function setScene(name){
   byId('scBench').innerHTML=inside?'<use href="#fg-bench-'+name+'"/>':'';
   byId('scDesk').innerHTML=inside?'<use href="#fg-desks-'+name+'"/>':'';
   const th=byId('theater');th.setAttribute('data-scene',name);th.setAttribute('data-inside',inside?'1':'0');
+  const rc=SCENES.rim(name).replace('#','');th.style.setProperty('--beam',parseInt(rc.slice(0,2),16)+','+parseInt(rc.slice(2,4),16)+','+parseInt(rc.slice(4,6),16));
   ['actL','actR','actM'].forEach(function(id){const e=byId(id);e.className='actor '+(id==='actL'?'left':id==='actR'?'right':'mid');e.innerHTML='';e.removeAttribute('data-who');});
   if(inside&&CUR&&CUR.bench)showActor('actM',CUR.bench);
   byId('crossbar').classList.remove('on');
@@ -63,7 +64,7 @@ function layoutStage(){
   M.style.width=aw.toFixed(1)+'px';M.style.left=(ox+600*s-aw/2).toFixed(1)+'px';M.style.top=(oy+(292-61*1.25)*s).toFixed(1)+'px';M.style.bottom='auto';
   const narrow=W<700,deskOn=inside&&(ox+330*s>60);
   [['actL',150],['actR',1050]].forEach(function(p){
-    const e=byId(p[0]),w=narrow?Math.min(W*.52,250):Math.max(180,Math.min(W*.18,290)),h=w*170/120;
+    const e=byId(p[0]),w=narrow?Math.min(W*.58,280):Math.max(200,Math.min(W*.21,330)),h=w*170/120;
     e.style.width=w.toFixed(1)+'px';
     let bottom=0;if(deskOn){const deskY=oy+488*s,top=deskY-h*(140/170);bottom=H-(top+h);}
     e.style.bottom=bottom.toFixed(1)+'px';
