@@ -1,21 +1,238 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#111d29">
-<meta name="description" content="星海公约：在星际社会里，过一个人的一生。A mystery told through ordinary lives among the stars.">
-<title>星海公约 · 人间星海</title>
-<link rel="stylesheet" href="css/lives.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0A0F1E">
+<meta name="description" content="星海公约：一部关于太空法的仲裁故事。从 1957 年第一颗卫星，到 2077 年的一封回信。">
+<title>星海公约</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23F3EDE1'/%3E%3Cpath d='M32 12v34M14 18h36M24 50h16M10 18l6 12 6-12M42 18l6 12 6-12' stroke='%23B8362B' stroke-width='3.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/map.css">
+<link rel="stylesheet" href="css/theater.css">
+<link rel="stylesheet" href="css/games.css">
+<link rel="stylesheet" href="css/panels.css">
+<link rel="stylesheet" href="css/pen.css">
+<link rel="stylesheet" href="css/work.css">
+<link rel="stylesheet" href="css/intro.css">
+<link rel="stylesheet" href="css/stories.css">
 </head>
 <body>
-<div id="app"></div>
-<div id="notice" role="status" aria-live="polite"></div>
-<input id="saveFile" type="file" accept=".json,application/json" hidden>
-<script src="js/lives/content.js"></script>
-<script src="js/lives/cases.js"></script>
-<script src="js/lives/model.js"></script>
-<script src="js/lives/engine.js"></script>
-<noscript>This game needs JavaScript. 此游戏需要启用 JavaScript。</noscript>
+<div id="fatalbox"></div>
+<div id="grain"></div>
+
+<!-- 图标与美术定义（立绘、场景在运行时注册到 #artDefs） -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs id="artDefs">
+  <symbol id="ic-sound" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.6a7.6 7.6 0 0 1 0 10.8"/></symbol>
+  <symbol id="ic-mute" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></symbol>
+  <symbol id="ic-music" viewBox="0 0 24 24"><path d="M9 17.5V6l10-2v11.5"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="15.5" r="2.5"/></symbol>
+  <symbol id="ic-music-off" viewBox="0 0 24 24"><path d="M9 17.5V6l10-2v11.5"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="15.5" r="2.5"/><path d="M3 3l18 18"/></symbol>
+  <symbol id="ic-ff" viewBox="0 0 24 24"><path d="M4 6l7 6-7 6zM12 6l7 6-7 6z"/></symbol>
+  <symbol id="ic-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
+  <symbol id="ic-play" viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z"/></symbol>
+  <symbol id="ic-skip" viewBox="0 0 24 24"><path d="M6 6l9 6-9 6zM18 6v12"/></symbol>
+  <symbol id="ic-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+  <symbol id="ic-down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+  <symbol id="ic-exit" viewBox="0 0 24 24"><path d="M14 4h5v16h-5M10 8l-4 4 4 4M6 12h10"/></symbol>
+  <symbol id="ic-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="ic-star" viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/></symbol>
+  <symbol id="ic-dust" viewBox="0 0 24 24"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z"/><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/></symbol>
+  <symbol id="ic-bulb" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9V16h7v-2.1A6 6 0 0 0 12 3z"/></symbol>
+  <symbol id="ic-bolt" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></symbol>
+  <symbol id="ic-sat" viewBox="0 0 24 24"><rect x="9" y="9" width="6" height="6" rx="1"/><path d="M3 7l4 4M7 3l4 4M17 13l4 4M13 17l4 4M6 18a4 4 0 0 1 0-5.6"/></symbol>
+  <symbol id="ic-moon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/></symbol>
+  <symbol id="ic-orbit" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><ellipse cx="12" cy="12" rx="10" ry="4.5" transform="rotate(-20 12 12)"/></symbol>
+  <symbol id="ic-sling" viewBox="0 0 24 24"><circle cx="15" cy="10" r="4"/><path d="M3 20c4-1 7-4 8-8M19 3l2 2"/></symbol>
+  <symbol id="ic-station" viewBox="0 0 24 24"><rect x="9" y="4" width="6" height="16" rx="2"/><path d="M3 8h6M15 8h6M3 16h6M15 16h6"/></symbol>
+  <symbol id="ic-gavel" viewBox="0 0 24 24"><path d="M14 4l6 6M11 7l6 6M12.5 5.5l-4 4M17.5 10.5l-4 4M10 12l-7 7"/><path d="M4 21h8"/></symbol>
+  <symbol id="ic-chat" viewBox="0 0 24 24"><path d="M4 5h16v10H9l-5 4z"/></symbol>
+  <symbol id="ic-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></symbol>
+  <symbol id="ic-file" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></symbol>
+  <symbol id="ic-law" viewBox="0 0 24 24"><path d="M12 3v18M5 7h14M8 21h8M5 7l-3 6h6zM19 7l-3 6h6z"/></symbol>
+  <symbol id="ic-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></symbol>
+  <symbol id="ic-heart" viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></symbol>
+  <symbol id="ic-book" viewBox="0 0 24 24"><path d="M12 6c-2-1.5-5-2-8-1v14c3-1 6-.5 8 1 2-1.5 5-2 8-1V5c-3-1-6-.5-8 1zM12 6v14"/></symbol>
+  <symbol id="ic-hand" viewBox="0 0 24 24"><path d="M3 12l4-3 4 1 3-2 4 1 3 3-5 5H9z"/><path d="M11 10l3 3"/></symbol>
+  <symbol id="ic-scale" viewBox="0 0 24 24"><path d="M12 4v16M6 20h12M5 7h14M5 7l-2.5 6h5zM19 7l-2.5 6h5z"/></symbol>
+  <symbol id="ic-pen" viewBox="0 0 24 24"><path d="M4 20l4-1L19 8l-3-3L5 16zM14 7l3 3"/></symbol>
+  <symbol id="ic-broom" viewBox="0 0 24 24"><path d="M19 3l-7 7M9 10l5 5-4 6-7-7z"/></symbol>
+  <symbol id="ic-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="ic-archive" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v11h14V9M10 13h4"/></symbol>
+  <symbol id="ic-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="1.5"/></symbol>
+  <symbol id="ic-leaf" viewBox="0 0 24 24"><path d="M5 19C5 10 11 5 20 4c0 9-5 15-14 15zM5 19l8-8"/></symbol>
+</defs>
+</svg>
+
+<!-- ===================== 开机 ===================== -->
+<div id="boot">
+  <div class="bt-photo"><canvas id="bootCv"></canvas><div class="bt-photo-cap">LOOKING UP · 1957</div></div>
+  <div class="bt-paper">
+    <div class="bt-title">星海公约</div>
+    <div class="bt-sig">Stellar Covenant</div>
+    <div class="bt-caps">AN ARBITRATION STORY　·　1957 — 2077</div>
+    <button class="btn red" id="bootGo">进入星图</button>
+    <a href="lives.html" class="life-edition">新故事 · 人间星海　/　A new story · Ordinary Lives</a>
+    <label class="language-control" for="bootLanguage">Language / 语言 <select class="language-select" id="bootLanguage"><option value="zh-CN">简体中文</option><option value="en">English · preview</option></select></label>
+    <p class="language-coverage" data-language-coverage></p>
+    <div class="bt-motto">真实的是法，虚构的是国</div>
+    <div class="bt-motto-en">The law is real. The nations are fictional.</div>
+  </div>
+</div>
+
+<!-- ===================== 开场影像 ===================== -->
+<div id="intro" class="layer">
+  <div id="introFrame">
+    <canvas id="introGL"></canvas>
+    <canvas id="introCv"></canvas>
+    <canvas id="introOv"></canvas>
+    <div class="ishot" id="shotA"><video playsinline muted preload="auto"></video><svg viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice"></svg></div>
+    <div class="ishot" id="shotB"><video playsinline muted preload="auto"></video><svg viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice"></svg></div>
+  </div>
+  <div id="introAI">画面由 AI 生成</div>
+  <div id="introDip"></div>
+  <div id="introTitle"><div class="it-name">星海公约</div><div class="it-sig">Stellar Covenant</div><div class="it-sub">1957 — 2077</div><div class="it-motto">真实的是法，虚构的是国<span>The law is real. The nations are fictional.</span></div></div>
+  <div id="introVeil"></div>
+  <div id="introSub"><div class="tx" id="introTx"></div></div>
+  <div id="introHint">轻触屏幕跳到下一句</div>
+  <div id="introCtl">
+    <div id="introBar"><i id="introBarFill"></i></div>
+    <button class="ibtn" id="introPause"><svg class="ic"><use href="#ic-pause"/></svg>暂停</button>
+    <button class="ibtn" id="introSkip"><svg class="ic"><use href="#ic-skip"/></svg>跳过</button>
+  </div>
+</div>
+
+<!-- ===================== 星图 ===================== -->
+<div id="hub" class="layer">
+  <div id="mapStage"><canvas id="mapFog"></canvas><canvas id="mapCv"></canvas><canvas id="mapFx"></canvas><div id="mapVig"></div><div id="mapLabels"></div></div>
+  <div id="planetView"><canvas id="pvCv"></canvas><canvas id="pvGround"></canvas><svg id="pvPath"></svg><div id="pvHead"></div><div id="pvNodes"></div></div>
+  <header id="hubHud">
+    <button class="hud-me" id="hudMe"><span class="hud-av" id="hudAv"></span><span class="hud-who"><b id="hudName">简</b><small id="hudRank">见习仲裁员</small></span></button>
+    <div class="hud-sp"></div>
+    <button class="hud-focus" id="hudWork" title="秘书处 · 工时与调休（精力 70 以上开庭多一格气势）"><span class="hw-c" id="hudClock"></span><span class="hw-f"><span>精力</span><i><b id="hudFocusBar"></b></i><em id="hudFocusV">80</em></span></button>
+    <button class="hud-dust" id="hudDustBtn" title="星尘"><svg class="ic fill"><use href="#ic-dust"/></svg><b id="hudDust">0</b><span class="hud-h"><svg class="ic"><use href="#ic-bulb"/></svg><b id="hudHints">0</b></span></button>
+    <button class="iconbtn btn-snd" aria-label="音效"></button>
+    <button class="iconbtn btn-bgm" aria-label="音乐"></button>
+  </header>
+  <nav id="hubBar">
+    <div class="hub-actions"><button class="cta" id="btnStories"><span class="cta-k">人物主线 · 共同事件</span><b>回信前夜 / Night Shift</b></button>
+    <button class="cta" id="btnNext"><span class="cta-k">继续主线</span><b id="ctaT">1980 · 天降核雨</b></button></div>
+    <div class="map-ctl">
+      <button id="mapIn" aria-label="放大">+</button>
+      <button id="mapOut" aria-label="缩小">−</button>
+      <button id="mapFit" aria-label="看全貌"><svg class="ic"><use href="#ic-target"/></svg></button>
+    </div>
+  </nav>
+</div>
+
+<!-- ===================== 面板 / 小游戏 ===================== -->
+<div id="panel" class="layer"></div>
+<div id="stories" class="layer" role="region" aria-label="人物主线"></div>
+<div id="pen" class="layer"></div>
+<div id="memo" class="layer"><div class="memo-card paper" id="memoCard"></div></div>
+<div id="game" class="layer">
+  <div class="gm-head"><button class="iconbtn" id="gmBack"><svg class="ic"><use href="#ic-back"/></svg></button><div class="gm-t"><b id="gmTitle"></b><span id="gmSub"></span></div><div class="gm-score" id="gmScore"></div></div>
+  <div id="gmStage"></div>
+  <div id="gmIntro" class="gm-card"></div>
+  <div id="gmResult" class="gm-card"></div>
+</div>
+
+<!-- ===================== 剧场 ===================== -->
+<div id="chapterCard" class="layer"></div>
+<div id="theater" class="layer">
+  <div id="thScene">
+    <div id="thCam">
+      <svg class="scene" id="scSvg" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice"></svg>
+      <div class="th-beam"><i></i><i></i><b></b><b></b><b></b><b></b><b></b><b></b></div>
+      <div id="thAmb"><div class="haze"></div><div class="mote"></div><div class="mote b"></div></div>
+      <div class="actor mid" id="actM"></div>
+      <svg class="scene fg" id="scBench" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice"></svg>
+      <div class="actor left" id="actL"></div>
+      <div class="actor right" id="actR"></div>
+      <svg class="scene fg" id="scDesk" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice"></svg>
+    </div>
+    <div id="thGrade"></div>
+    <button class="sr-edge l" id="srL"></button><button class="sr-edge r" id="srR"></button>
+  </div>
+  <div id="thHud">
+    <div class="th-left"><div id="morale"></div><div id="standing"></div><div id="mission"></div></div>
+    <div class="th-right"><span id="thYear"></span><button class="iconbtn sm" id="hintBtn" title="提示卡"><svg class="ic"><use href="#ic-bulb"/></svg></button><button class="iconbtn sm" id="thSkip" title="按住快进（或按住 Ctrl）"><svg class="ic"><use href="#ic-ff"/></svg></button><button class="iconbtn sm" id="thExit" title="退出本章"><svg class="ic"><use href="#ic-exit"/></svg></button></div>
+  </div>
+  <div id="srBar"></div>
+  <div id="dlg">
+    <div id="dlgInner"><div id="dlgName"></div><div id="dlgText"></div><div id="dlgNext"><svg class="ic"><use href="#ic-down"/></svg></div></div>
+  </div>
+  <div id="crossbar">
+    <button class="cbtn blue" id="btnPress"><span><kbd>Q</kbd>追问</span><small>让他多说一点</small></button>
+    <button class="cbtn gold" id="btnEv"><span><kbd>W</kbd>出示证据</span><small>指出矛盾</small></button>
+    <button class="cbtn jade" id="btnLaw"><span><kbd>E</kbd>引律</span><small>引用法条</small></button>
+  </div>
+  <div id="choices"></div>
+  <div id="shelf"><div class="sh-in"><div class="sh-title" id="shelfTitle"></div><div id="shelfList"></div><button class="btn ghost sm" id="shelfCancel">取消</button></div></div>
+  <div id="board"></div>
+  <button id="inspectDone" class="btn sm">结束勘验</button>
+  <div id="tipCard"></div>
+</div>
+<div id="verdict" class="layer"><div class="vdoc" id="vdoc"></div></div>
+<div id="objection" class="layer"><div class="flash"></div><div class="seal" id="objWord">异<br>议</div></div>
+<div id="ending" class="layer"></div>
+
+<!-- ===================== 弹窗 ===================== -->
+<div id="histCard" class="layer"></div>
+<div id="avatar" class="layer"></div>
+<div id="adModal" class="layer"><div class="ad-in paper"><div class="ad-k">激励视频 · 开发占位</div><div class="ad-why"></div><div class="ad-cnt">3</div><div class="muted small">正式版接入小程序/应用的广告组件后，这里会播放一段视频。</div><button class="btn ghost sm ad-close">不看了</button></div></div>
+<div id="termTip"></div>
+<div id="achpop"><svg class="ic" style="width:30px;height:30px;color:#E6B34D"><use href="#ic-star"/></svg><div><div class="at" id="acht"></div><div class="ad" id="achd"></div></div></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="iris"></div>
+<canvas id="fx"></canvas>
+
+<script src="js/core/util.js"></script>
+<script src="js/core/save.js"></script>
+<script src="js/core/i18n.js"></script>
+<script src="js/core/audio.js"></script>
+<script src="js/core/fx.js"></script>
+<script src="js/core/economy.js"></script>
+<script src="js/core/work.js"></script>
+<script src="js/art/portraits.js"></script>
+<script src="js/art/scenes.js"></script>
+<script src="js/data/glossary.js"></script>
+<script src="js/data/laws.js"></script>
+<script src="js/data/history.js"></script>
+<script src="js/data/cast.js"></script>
+<script src="js/data/bench.js"></script>
+<script src="js/data/quiz.js"></script>
+<script src="js/theater/engine.js"></script>
+<script src="js/theater/search.js"></script>
+<script src="js/theater/mech.js"></script>
+<script src="js/theater/arbiter.js"></script>
+<script src="js/theater/verdict.js"></script>
+<script src="js/chapters/ch1.js"></script>
+<script src="js/chapters/ch2.js"></script>
+<script src="js/chapters/ch3.js"></script>
+<script src="js/chapters/ch4.js"></script>
+<script src="js/chapters/ch5.js"></script>
+<script src="js/chapters/ch6.js"></script>
+<script src="js/hub/starmap.js"></script>
+<script src="js/games/core.js"></script>
+<script src="js/games/art.js"></script>
+<script src="js/games/sat.js"></script>
+<script src="js/games/lander.js"></script>
+<script src="js/games/orbit.js"></script>
+<script src="js/games/sling.js"></script>
+<script src="js/games/station.js"></script>
+<script src="js/games/relax.js"></script>
+<script src="js/ui/panels.js"></script>
+<script src="js/ui/pen.js"></script>
+<script src="js/ui/film.js"></script>
+<script src="js/ui/cine.js"></script>
+<script src="js/ui/intro.js"></script>
+<script src="js/ui/boot.js"></script>
+<script src="js/worlds/nightshift.js"></script>
+<script src="js/ui/stories.js"></script>
+<script src="js/main.js"></script>
 </body>
 </html>

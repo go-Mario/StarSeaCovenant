@@ -13,8 +13,11 @@ def data_uri(path, mime):
     return "data:" + mime + ";base64," + base64.b64encode(path.read_bytes()).decode("ascii")
 
 
-def build():
-    html = (ROOT / "index.html").read_text(encoding="utf-8")
+def build(entry="index.html"):
+    entry = (ROOT / entry).resolve()
+    if not entry.is_relative_to(ROOT):
+        raise ValueError("Entry must be inside the repository")
+    html = entry.read_text(encoding="utf-8")
 
     def stylesheet(match):
         path = ROOT / match[1]
@@ -53,21 +56,24 @@ def build():
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="Fail if the portable HTML differs from maintained sources")
-    parser.add_argument("--output", type=Path, default=ROOT / "dist/starsea.html")
+    parser.add_argument("--entry", default="index.html", help="HTML entry to package (default: index.html)")
+    parser.add_argument("--output", type=Path, help="Output path (defaults to dist/<entry-name>.html)")
     args = parser.parse_args()
-    if args.output.resolve() == ROOT / "index.html":
-        raise SystemExit("Keep the modular web entry. Choose a different output path.")
-    result = build()
+    entry = (ROOT / args.entry).resolve()
+    output = args.output.resolve() if args.output else ROOT / "dist" / ("starsea.html" if entry.name == "index.html" else entry.stem + ".html")
+    if output == entry:
+        raise SystemExit("Choose a different output path to keep the modular web entry.")
+    result = build(args.entry)
     if args.check:
-        if not args.output.exists() or args.output.read_bytes() != result:
-            raise SystemExit("Generated HTML is out of date. Run: python3 tools/build.py")
+        if not output.exists() or output.read_bytes() != result:
+            raise SystemExit("Generated HTML is out of date. Rebuild it from the selected entry.")
         print("Generated HTML matches source modules.")
         return
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    tmp = args.output.with_suffix(args.output.suffix + ".tmp")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    tmp = output.with_suffix(output.suffix + ".tmp")
     tmp.write_bytes(result)
-    tmp.replace(args.output)
-    print(f"Built {args.output.name}: {len(result):,} bytes (all referenced resources included).")
+    tmp.replace(output)
+    print(f"Built {output.name}: {len(result):,} bytes (all referenced resources included).")
 
 
 if __name__ == "__main__":

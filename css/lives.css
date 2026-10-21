@@ -6,3 +6,22 @@
 @media(prefers-reduced-motion:reduce){*{animation:none!important;scroll-behavior:auto!important}}
 
 .dock-map{width:min(100%,360px);border:1px solid #52717b;border-radius:8px;margin:20px auto;display:block}.dock-controls{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}.rest-grid{grid-template-columns:repeat(2,1fr)}@media(max-width:650px){.rest-grid{grid-template-columns:1fr}}
+
+/* Scene rhythm: restrained motion that remains comfortable and optional. */
+@keyframes livesArrive{from{opacity:0;transform:translateY(10px) scale(.992)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes cluePulse{0%,100%{box-shadow:0 3px 15px #0005,0 0 0 0 #d7bf7940}50%{box-shadow:0 3px 17px #0008,0 0 0 7px #d7bf7900}}
+@keyframes starDrift{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.hero,.intro-grid,.layout,.ending,.journal,.settings,.rest-center{animation:livesArrive .5s cubic-bezier(.2,.75,.25,1) both}
+.hero-art{animation:starDrift 9s ease-in-out infinite}
+.role{transition:transform .22s,border-color .22s,background .22s,box-shadow .22s}
+.role:hover{transform:translateY(-4px);box-shadow:0 15px 32px #0004}
+.scene{animation:livesArrive .45s ease-out both}
+.hotspot:not(.read){animation:cluePulse 3.2s ease-in-out infinite}
+.hotspot:hover{transform:translate(-50%,-53%);transition:transform .16s}
+.life-edition{display:block;width:max-content;max-width:100%;margin:12px auto 0;color:#554a37;text-decoration:none;font-size:12px;letter-spacing:.03em;padding:8px 14px;border:1px solid #ac9b7b;border-radius:4px;transition:background .2s,transform .2s}
+.life-edition:hover{background:#e5dcc9;transform:translateY(-1px)}
+@media(prefers-reduced-motion:reduce){.hero-art,.hotspot:not(.read){animation:none!important}.hero,.intro-grid,.layout,.ending,.journal,.settings,.rest-center,.scene{animation:none!important}.role,.life-edition,.hotspot{transition:none!important}}
+.clock-lab{margin:22px 0;padding:20px;border:1px solid #9e9a7b;background:linear-gradient(145deg,#e8e1d2,#d6d2c4);border-radius:7px;color:#263b43;box-shadow:0 10px 26px #06111a25;animation:livesArrive .35s ease-out both}
+.clock-lab h3{font-family:Georgia,"Songti SC",serif;font-size:21px;font-weight:500;margin-top:6px}.clock-lab p{font-size:13px!important;line-height:1.7!important;color:#445a60;margin:8px 0 16px!important}.clock-readings{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}.clock-readings span{display:block;padding:12px;border:1px solid #9ba8a1;border-radius:5px;background:#f5f1e7;font-size:11px;color:#5a6e70}.clock-readings b{display:block;font-family:ui-monospace,monospace;font-size:21px;color:#233b45}.clock-slider{display:block;font-size:12px;color:#3a5158;margin:16px 0}.clock-slider output{font-weight:700}.clock-slider input{display:block;width:100%;accent-color:#9a743c;margin-top:7px}.edition-link{text-decoration:none;font-size:12px;white-space:nowrap}
+@media(max-width:600px){.top-right{gap:4px}.edition-link{order:4;width:100%;text-align:center}.clock-lab{padding:15px}.clock-readings b{font-size:17px}}
+.clock-lab.clock-ok{font-size:14px;font-weight:600;background:#dce3d5;border-color:#78917f;color:#294b3d}

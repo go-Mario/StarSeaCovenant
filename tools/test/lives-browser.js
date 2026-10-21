@@ -1,15 +1,15 @@
 const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=require('node:fs/promises'),path=require('node:path');
-const BASE=process.env.SS_URL||'http://127.0.0.1:8766/index.html',OUT=process.argv[2]||path.join(__dirname,'out/lives');
+const BASE=process.env.SS_URL||'http://127.0.0.1:8766/lives.html',OUT=process.argv[2]||path.join(__dirname,'out/lives');
 (async()=>{await fs.mkdir(OUT,{recursive:true});const browser=await chromium.launch();try{
  for(const [language,width,height] of [['zh',1365,900],['en',390,844]]){
   const ctx=await browser.newContext({viewport:{width,height}}),page=await ctx.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(BASE);await page.selectOption('#language',language);
+  await page.goto(BASE);await page.selectOption('#language',language);assert.match(await page.locator('[data-act=\"sound\"]').textContent(),/Sound|音效/);await page.click('[data-act=\"sound\"]');assert.equal(await page.evaluate(()=>LIFE_AUDIO.enabled),true);await page.click('[data-act=\"sound\"]');
   await page.screenshot({path:path.join(OUT,language+'-home.png'),fullPage:true});
   for(const role of ['lin','su','xu','jian']){
    await page.click('[data-act="select"][data-id="'+role+'"]');await page.click('[data-act="start"]');
    for(let act=0;act<6;act++){
     await page.click('.hotspot[data-id="0"]');await page.click('.hotspot[data-id="1"]');
-    if(act===0){await page.click('.hotspot[data-id="2"]');await page.screenshot({path:path.join(OUT,language+'-'+role+'-scene.png'),fullPage:true});}
+    if(act===0){await page.click('.hotspot[data-id="2"]');await page.locator('#clockShift').fill('84');assert.equal(await page.locator('#adjustedTime').textContent(),'03:17:20');await page.click('[data-act="alignClock"]');assert.equal(await page.evaluate(id=>LIFE.state.runs[id].clockAligned,role),true);await page.screenshot({path:path.join(OUT,language+'-'+role+'-scene.png'),fullPage:true});}
     const correct=(3-((act+['lin','su','xu','jian'].indexOf(role))%3))%3;
     await page.click('[data-act="deduce"][data-id="'+((correct+1)%3)+'"]');
     assert.equal(await page.locator('.hint').isVisible(),true);
@@ -59,7 +59,7 @@ const BASE=process.env.SS_URL||'http://127.0.0.1:8766/index.html',OUT=process.ar
  assert.equal(await page.evaluate(()=>LIFE.blocked),true);await page.click('[data-act="select"][data-id="su"]');await page.click('[data-act="start"]');
  assert.equal(await page.evaluate(()=>localStorage.getItem('SS_LIVES_v1')),'broken');
  const network=[];page.on('request',r=>{if(/^https?:/.test(r.url()))network.push(r.url());});
- await page.goto(require('node:url').pathToFileURL(path.join(__dirname,'../../dist/starsea.html')).href);
+ await page.goto(require('node:url').pathToFileURL(path.join(__dirname,'../../dist/lives.html')).href);
  await page.click('[data-act="select"][data-id="lin"]');await page.click('[data-act="start"]');await page.click('.hotspot[data-id="0"]');
  assert.deepEqual(network,[]);console.log('ok corrupt-save protection and offline file without network');await ctx.close();
  const recovery=await browser.newContext(),rp=await recovery.newPage();await rp.goto(BASE);

@@ -12,7 +12,7 @@ const LIVES={
  acts:[
  {year:2077,title:B('第十三份早餐','The thirteenth breakfast'),place:B('归港站 · 第三环','Homeward Station · Ring Three'),question:B('一个已经“死亡”的人，为什么还在订早餐？','Why is a “dead” man still ordering breakfast?'),weather:B('人工黎明还有 17 分钟','Seventeen minutes until artificial dawn'),flag:'record',
  public:B('站务广播称：一名夜班人员发生意外，搜救已经结束。第三环的居民还在等一句像样的解释。','The station announces that a night worker has died and the search is over. Ring Three is still waiting for an explanation.'),
- clue:B('时钟核对：门禁比食堂终端快 84 秒。门禁上的“事故后进入”，其实发生在事故之前。系统注销不是死亡证明。','Clock check: the door reader runs 84 seconds ahead of the meal terminal. The entry logged “after the accident” happened before it. A deactivated identity is not proof of death.'),
+ clue:B('门禁记录标注 03:18:44，食堂终端标注 03:17:20。“事故后进入”看似晚了一分多钟。系统注销不是死亡证明。','The door reader shows 03:18:44; the canteen terminal shows 03:17:20. The “post-accident entry” appears a little over a minute later. Deactivation is not proof of death.'),
  answer:B('记录被错接了；应先找到活人，而不是接受系统结论。','The records have been misaligned. Find the person before accepting the system’s conclusion.'),
  wrong:[B('早餐订单证明他从未离开食堂。','The breakfast order proves he never left the canteen.'),B('时间不同，所有记录都没有价值。','Different timestamps make every record worthless.')],
  reveal:B('你找到的不是一具尸体，而是一段紧急转运记录。乔安受伤后被送往无名的医护舱，身份却被注销了。那十三份饭，送给十三个同样失去身份的人。','What you find is an emergency transfer, not a body. Jo An was injured and moved to an unnamed medical compartment while his identity was cancelled. The thirteen meals go to thirteen people in the same position.')},
