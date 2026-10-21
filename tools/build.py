@@ -33,8 +33,10 @@ def build():
         return "<style>\n/* Source: " + match[1] + " */\n" + css + "\n</style>"
 
     html = re.sub(r'<link rel="stylesheet" href="([^"]+)">', stylesheet, html)
-    clips = {p.stem: data_uri(p, "video/webm") for p in sorted((ROOT / "assets/intro").glob("*.webm"))}
-    payload = "<script>\nconst STANDALONE_CLIPS=" + json.dumps(clips, separators=(",", ":")) + ";\n</script>\n"
+    payload = ""
+    if 'js/ui/intro.js' in html:
+        clips = {p.stem: data_uri(p, "video/webm") for p in sorted((ROOT / "assets/intro").glob("*.webm"))}
+        payload = "<script>\nconst STANDALONE_CLIPS=" + json.dumps(clips, separators=(",", ":")) + ";\n</script>\n"
     html = html.replace('<script src=', payload + '<script src=', 1)
 
     def script(match):
@@ -65,7 +67,7 @@ def main():
     tmp = args.output.with_suffix(args.output.suffix + ".tmp")
     tmp.write_bytes(result)
     tmp.replace(args.output)
-    print(f"Built {args.output.name}: {len(result):,} bytes (fonts and optional intro clips included).")
+    print(f"Built {args.output.name}: {len(result):,} bytes (all referenced resources included).")
 
 
 if __name__ == "__main__":
