@@ -35,7 +35,7 @@ function showTip(id){
     const T=TIPS[id];if(!T){res();return;}
     if(S.tips.indexOf(id)<0){S.tips.push(id);save();}
     const card=byId('tipCard');
-    card.innerHTML='<div class="tc-in paper"><div class="tc-k">新机制</div><div class="tc-t">'+icon(T.ic)+' '+T.t+'</div><div class="tc-d">'+T.d+'</div><button class="btn block" id="tcOk">明白了</button></div>';
+    card.innerHTML='<div class="tc-in paper"><div class="tc-k">'+I18N.t('新机制','New mechanism')+'</div><div class="tc-t">'+icon(T.ic)+' '+T.t+'</div><div class="tc-d">'+T.d+'</div><button class="btn block" id="tcOk">'+I18N.t('明白了','Got it')+'</button></div>';
     card.classList.add('on');SFX.page();
     byId('tcOk').onclick=function(){SFX.tap();card.classList.remove('on');setTimeout(res,180);};
   });
@@ -195,7 +195,7 @@ function shelf(title,items,render,cancel){
   });
 }
 function showObjection(word){
-  const o=byId('objection'),w=byId('objWord');w.innerHTML=word||'异<br>议';
+  const o=byId('objection'),w=byId('objWord');w.innerHTML=word||I18N.t('异<br>议','OBJECTION');
   o.classList.remove('on','out');void o.offsetWidth;o.classList.add('on');camShake(true);
   setTimeout(function(){o.classList.add('out');},720);setTimeout(function(){o.classList.remove('on','out');},1040);
 }
@@ -225,7 +225,7 @@ function setMission(t){const e=byId('mission');e.textContent=t||'';e.classList.t
 /* ---------------- 开章 ---------------- */
 async function startChapter(id){
   const C=CHAPTERS[id];if(!C)return;
-  if(!chapterUnlocked(id)){toast('先完成上一章。');SFX.error();return;}
+  if(!chapterUnlocked(id)){toast(I18N.t('先完成上一章。','Finish the previous chapter first.'));SFX.error();return;}
   CUR=C;
   SFX.tap();MUSIC.setMode('intro');
   ROLE_TAG.me=C.myTag||'本方代理人';ROLE_TAG.meSide=C.mySide||'left';
@@ -253,18 +253,19 @@ function chapterCard(C,ws){
     card.className='layer on dossier era-'+C.era;
     const M=C.verdict||{},row=function(k,v){return v?'<div class="dz-row"><span>'+k+'</span><b>'+v+'</b></div>':'';};
     card.innerHTML='<div class="dz">'+
-      '<div class="dz-tab">案 卷</div>'+
+      '<div class="dz-tab">'+I18N.t('案 卷','CASE FILE')+'</div>'+
       '<div class="dz-no">'+(M.no||'')+'</div>'+
       '<div class="dz-year">'+C.year+'</div>'+
-      '<div class="dz-num">'+C.num+(C.arbiter?' · 仲裁员':'')+'</div>'+
+      '<div class="dz-num">'+C.num+(C.arbiter?I18N.t(' · 仲裁员',' · Arbiter'):'')+'</div>'+
       '<div class="dz-title">'+C.title+'</div>'+
       '<div class="dz-sub">'+C.sub+'</div>'+
       '<div class="dz-rule"></div>'+
-      row('受理机构',M.court?String(M.court).replace(/\s+/g,''):'')+row('你的身份',C.roleLine)+row('争议焦点',C.issue)+row('适用规则',M.law)+
-      (newM?'<div class="dz-new"><span>本章新机制</span>'+newM+'</div>':'')+
-      '<div class="dz-buff'+(TH.fresh?'':' dim')+'">'+(TH.fresh?'<b>气势 +1</b>':'')+Work.stateLine(ws)+'</div>'+
-      '<div class="dz-btns"><button class="btn ghost sm" id="ccBack">返回</button><button class="btn dz-go" id="ccGo">开 庭</button></div>'+
+      row(I18N.t('受理机构','Forum'),M.court?String(M.court).replace(/\s+/g,''):'')+row(I18N.t('你的身份','Your role'),C.roleLine)+row(I18N.t('争议焦点','Issues in dispute'),C.issue)+row(I18N.t('适用规则','Rules applied'),M.law)+
+      (newM?'<div class="dz-new"><span>'+I18N.t('本章新机制','New this chapter')+'</span>'+newM+'</div>':'')+
+      '<div class="dz-buff'+(TH.fresh?'':' dim')+'">'+(TH.fresh?I18N.t('<b>气势 +1</b>','<b>Momentum +1</b>'):'')+Work.stateLine(ws)+'</div>'+
+      '<div class="dz-btns"><button class="btn ghost sm" id="ccBack">'+I18N.t('返回','Back')+'</button><button class="btn dz-go" id="ccGo">'+I18N.t('开 庭','OPEN COURT')+'</button></div>'+
       '<i class="dz-c tl"></i><i class="dz-c tr"></i><i class="dz-c bl"></i><i class="dz-c br"></i></div>';
+    I18N.apply(card);
     SFX.whoosh();
     byId('ccGo').onclick=function(){SFX.gavel();card.classList.remove('on');res();};
     byId('ccBack').onclick=function(){SFX.tap();card.classList.remove('on');TH.running=false;res();};
@@ -315,10 +316,10 @@ async function doChoice(s){
   const o=s.opts[i];
   if(!o.ok){
     if(o.after)for(const a of o.after)await runOp(a);
-    if(await hurt(s.q,o.tag||'失着'))return 'fail';
+    if(await hurt(s.q,o.tag||I18N.t('失着','Misstep')))return 'fail';
     return;
   }
-  logPick(s.q,true,o.tag||'应对得当');
+  logPick(s.q,true,o.tag||I18N.t('应对得当','Well played'));
   if(o.lean)noteLean(o.lean);
   if(o.after)for(const a of o.after)await runOp(a);
 }

@@ -364,7 +364,7 @@ const StarMap=(function(){
       h+='<div class="wl'+(w.id==='station'?' wl-station':'')+'" data-w="'+w.id+'"><i class="wl-hit"></i><div class="wl-tag"><b>'+w.name+'</b><span>'+w.en+'</span><em></em></div></div>';
     });
     h+='<div class="wl-cue" id="mapCue">主线从这里开始</div><div class="map-peek" id="mapPeek"></div>';
-    labels.innerHTML=h;
+    labels.innerHTML=h;I18N.apply(labels);
     /* 航迹上的标记 */
     markers=HISTORY.map(function(it,i){const p=trailPt(it.y+(it.m?(it.m-.5)/12:.5));const off=(i%2?1:-1)*(it.kind==='fact'?0:14);
       return {id:it.id,kind:it.kind,y:it.y,t:it.t,x:p.x+Math.cos(p.a)*off,yy:p.y+Math.sin(p.a)*off};});
@@ -543,6 +543,7 @@ const StarMap=(function(){
       el.querySelector('em').textContent=w.id==='station'?('档案馆 · '+S.profile.name+' · '+rankOf(S.rep)):worldHint(w);
       el.classList.toggle('next',w.id==='theater'&&!!nx);
     });
+    I18N.apply(labels);
     dirty=true;
   }
 

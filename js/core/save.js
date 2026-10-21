@@ -193,6 +193,6 @@ const SAVE={
 document.addEventListener('DOMContentLoaded',storageNotice);
 
 /* 星尘、提示卡、精力 —— 详见 economy.js */
-function rankOf(rep){return rep>=40?'首席仲裁员':rep>=26?'资深仲裁员':rep>=14?'仲裁员':rep>=6?'助理仲裁员':'见习仲裁员';}
+function rankOf(rep){return I18N.t(rep>=40?'首席仲裁员':rep>=26?'资深仲裁员':rep>=14?'仲裁员':rep>=6?'助理仲裁员':'见习仲裁员',rep>=40?'Chief Arbitrator':rep>=26?'Senior Arbitrator':rep>=14?'Arbitrator':rep>=6?'Assistant Arbitrator':'Probationary Arbitrator');}
 function rankNext(rep){return [6,14,26,40].find(function(x){return x>rep;})||40;}
 function rankFloor(rep){return rep>=40?40:rep>=26?26:rep>=14?14:rep>=6?6:0;}

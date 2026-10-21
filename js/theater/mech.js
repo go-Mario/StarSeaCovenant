@@ -16,7 +16,7 @@ async function doInvest(d){
   const found=function(){return d.spots.filter(function(s){return evDef(s.id).key&&TH.evs.indexOf(s.id)>=0;}).length;};
   if(d.intro)for(const op of d.intro)await runOp(op);
   if(!TH.running)return 'fail';
-  setMission('现场取证 · 关键证物 '+found()+'/'+keys);
+  setMission(I18N.t('现场取证 · 关键证物 ','Evidence gathering · key items ')+found()+'/'+keys);
   const svg=byId('scSvg');
   await new Promise(function(resolve){
     /* 取证结束后立刻撤掉剩下的标记，免得转场时再点出一段对白 */
@@ -36,9 +36,9 @@ async function doInvest(d){
         const ev=evDef(sp.id);
         await say(d.guide||'chen','<em>收进证物袋：「'+ev.name+'」</em><br>'+ev.desc);
         if(sp.say)await say(sp.say[0],sp.say[1]);
-        setMission(found()>=keys?'关键证物已齐 · 可以回庭':'现场取证 · 关键证物 '+found()+'/'+keys);
+        setMission(found()>=keys?I18N.t('关键证物已齐 · 可以回庭','All key items collected · you may return to court'):I18N.t('现场取证 · 关键证物 ','Evidence gathering · key items ')+found()+'/'+keys);
         const left=$$('#scSvg .hotspot').length;
-        if(found()>=keys&&!backOn){backOn=true;await say('chen',left?(d.done||'该拿的都拿到了。')+'剩下的也可以看看，多拿几件没坏处；想走了就点“回庭”。':(d.done||'该拿的都拿到了。回去开庭。'));}
+        if(found()>=keys&&!backOn){backOn=true;await say('chen',left?(d.done||I18N.t('该拿的都拿到了。','You have everything worth taking.'))+I18N.t('剩下的也可以看看，多拿几件没坏处；想走了就点“回庭”。','The rest is optional; a few extra items do no harm. When you want to leave, tap "Return to court.".'):(d.done||I18N.t('该拿的都拿到了。回去开庭。','You have everything worth taking. Go back and open the hearing.')));}
         TH.busy=false;
         if(found()>=keys){if(!left)done();else showBack();}
         if(!fin)Search.idle(true);
@@ -71,12 +71,12 @@ async function doCross(d){
     if(idx>=lines.length){
       loops++;idx=0;
       const t=hintTarget();
-      if(loops===1)await say('chen','证词说完了，还没找到破绽。再听一遍，留意哪一句和证物对不上。');
-      else if(t>=0)await say('chen','又绕回来了。给你指个方向：<em>第 '+(t+1)+' 句</em>，拿它和证物袋里的东西对一对。');
-      else await say('chen','再听一遍。不确定的话，先“追问”，让他多说几句。');
+      if(loops===1)await say('chen',I18N.t('证词说完了，还没找到破绽。再听一遍，留意哪一句和证物对不上。','The testimony is over and you have not found the opening. Hear it again, and watch for the sentence that clashes with your evidence.'));
+      else if(t>=0)await say('chen',I18N.t('又绕回来了。给你指个方向：<em>第 '+(t+1)+' 句</em>，拿它和证物袋里的东西对一对。','Off track again. A pointer: <em>sentence '+(t+1)+'</em>. Compare it with what is in your evidence bag.'));
+      else await say('chen',I18N.t('再听一遍。不确定的话，先“追问”，让他多说几句。','Hear it again. If you are unsure, press him first and let him say more.'));
     }
     const ln=lines[idx];
-    setPlate(d.witness,'证词 '+(idx+1)+'/'+lines.length);VOICE=d.witness;
+    setPlate(d.witness,I18N.t('证词 ','Testimony ')+(idx+1)+'/'+lines.length);VOICE=d.witness;
     const slot=slotFor(sideOf(d.witness));
     ['actL','actR','actM'].forEach(function(id){byId(id).classList.remove('speaking');});
     if(slot)showActor(slot,d.witness).classList.add('speaking');camTo(sideOf(d.witness));
@@ -94,22 +94,22 @@ async function doCross(d){
     if(act==='next'){idx++;continue;}
     if(act==='hint'){
       const t=hintTarget();again=true;
-      if(t<0){await say('chen','现在没什么可提示的，先往下听。');continue;}
+      if(t<0){await say('chen',I18N.t('现在没什么可提示的，先往下听。','There is nothing to hint at yet. Keep listening.'));continue;}
       hintLv++;
-      if(hintLv===1)await say('chen','提示：注意<em>第 '+(t+1)+' 句</em>。它和你手里的某件证物说的不是一回事。');
-      else await say('chen','提示：第 '+(t+1)+' 句，用<em>「'+evDef(lines[t].weak).name+'」</em>。');
+      if(hintLv===1)await say('chen',I18N.t('提示：注意<em>第 '+(t+1)+' 句</em>。它和你手里的某件证物说的不是一回事。','Hint: watch <em>sentence '+(t+1)+'</em>. It does not say the same thing as one of your items.'));
+      else await say('chen',I18N.t('提示：第 '+(t+1)+' 句，用<em>「'+evDef(lines[t].weak).name+'」</em>。','Hint: for sentence '+(t+1)+', use <em>"'+evDef(lines[t].weak).name+'"</em>.'));
       continue;
     }
     if(act==='law'){const r=await citeLaw();if(r==='fail')return 'fail';again=true;continue;}
     if(act==='press'){
       if(hasMech('standing')&&TH.standing<=1){
         await say(d.witness,d.refuse||'我已经回答过了。别的，我不想再说。');
-        await say('chen','证人不肯开口了。你前面问得太狠，人家记着。');idx++;continue;
+        await say('chen',I18N.t('证人不肯开口了。你前面问得太狠，人家记着。','The witness will not speak. You pressed too hard, and he remembers.'));idx++;continue;
       }
       if(ln.press&&ln.pressed){
         /* 第二轮再追问同一句：不把整段问答重放一遍 */
         await say(d.witness,'这个问题我刚才回答过了。');
-        if(ln.add)await say('chen','他补充的那句就在后面，接着听。');
+        if(ln.add)await say('chen',I18N.t('他补充的那句就在后面，接着听。','The line he adds comes later. Keep listening.'));
         idx++;continue;
       }
       if(ln.press){
@@ -119,26 +119,26 @@ async function doCross(d){
         if(ln.cost&&hasMech('cost')&&!TH.costDone){const r=await doCost(ln.cost);if(r==='fail')return 'fail';}
       }else{
         idleN++;await say(d.witness,IDLE[(idleN-1)%IDLE.length]);
-        if(hasMech('standing')&&TH.standing>=4&&d.gift&&!TH.giftDone){TH.giftDone=true;await say(d.witness,d.gift);await say('chen','这句话他本可以不说。你对人客气，人家也愿意多说一点。');}
-        else if(idleN===1)await say('chen','这一句问不出什么。把力气留给有毛病的那句。');
+        if(hasMech('standing')&&TH.standing>=4&&d.gift&&!TH.giftDone){TH.giftDone=true;await say(d.witness,d.gift);await say('chen',I18N.t('这句话他本可以不说。你对人客气，人家也愿意多说一点。','He could have left that unsaid. Treat people with courtesy, and they say more.'));}
+        else if(idleN===1)await say('chen',I18N.t('这一句问不出什么。把力气留给有毛病的那句。','This question yields nothing. Save your effort for the flawed sentence.'));
       }
       idx++;continue;
     }
     if(act==='ev'){
-      const pickId=await shelf('出示哪一件证物',evList(TH.evs),renderEv);
+      const pickId=await shelf(I18N.t('出示哪一件证物','Which item to show'),evList(TH.evs),renderEv);
       if(!pickId){again=true;continue;}
       const ev=evDef(pickId);
       if(pickId===ln.weak){
         SFX.objection();buzz([50,30,70]);showObjection();await sleep(850);
-        logPick('质证 · 第'+(idx+1)+'句',true,'出证命中');
+        logPick(I18N.t('质证 · 第','Cross-examination · sentence ')+(idx+1)+I18N.t('句',''),true,I18N.t('出证命中','Hit'));
         for(const op of (ln.reveal||[])){const r=await runOp(op);if(r==='fail')return 'fail';}
         if(ln.end)break;
         ln.weak=null;idx++;continue;
       }
       await say('me','请仲裁庭看这份材料：「'+ev.name+'」。');
       await say(CUR.bench,'本庭看过了。这份材料说的是：'+stripTags(fill(ev.desc))+' 而证人刚才那句话说的是：“'+stripTags(fill(ln.x))+'”。两者说的不是同一件事，谈不上矛盾。');
-      if(await hurt('质证 · 第'+(idx+1)+'句','证物不对题'))return 'fail';
-      await say('chen','出示证据要对准他刚说的那一句，不是整个案子。');
+      if(await hurt(I18N.t('质证 · 第','Cross-examination · sentence ')+(idx+1)+I18N.t('句',''),I18N.t('证物不对题','Wrong item')))return 'fail';
+      await say('chen',I18N.t('出示证据要对准他刚说的那一句，不是整个案子。','Aim the evidence at the sentence he just said, not at the whole case.'));
       idx++;continue;
     }
   }
@@ -152,16 +152,16 @@ async function useHint(){
   if(TH.crossRes){
     if(S.hints>0){ECON.hint();crossAct('hint');return;}
     const ok=await ECON.rewarded('看一段短片，换一张提示卡');
-    if(ok){crossAct('hint');}else toast('提示卡用完了。可以在档案馆的小卖部用星尘买。');
+    if(ok){crossAct('hint');}else toast(I18N.t('提示卡用完了。可以在档案馆的小卖部用星尘买。','Hint cards are used up. You can buy them with stardust at the archive shop.'));
     return;
   }
   if(TH.chainHint){TH.chainHint();return;}
-  toast('现在用不上提示。质证和组证据链时可以用。');
+  toast(I18N.t('现在用不上提示。质证和组证据链时可以用。','Hints are not usable now. Save them for cross-examination and the evidence chain.'));
 }
 /* 庭上引律 */
 async function citeLaw(){
   const items=LAWS.map(function(l){return Object.assign({},l,{dim:S.laws.indexOf(l.id)<0});});
-  const id=await shelf('引用哪一条',items,function(l){
+  const id=await shelf(I18N.t('引用哪一条','Which provision to cite'),items,function(l){
     const known=S.laws.indexOf(l.id)>=0;
     return '<div class="sh-n">'+l.name+' <span class="sh-src">'+l.src+'</span>'+(known?' <span class="chip ok">法典已收</span>':'')+'</div><div class="sh-d">'+(known?l.text:'<i>你对这一条只记得个大概：'+l.text.slice(0,16)+'……</i>')+'</div>';
   });
@@ -169,16 +169,16 @@ async function citeLaw(){
   const l=LAW_BY[id],right=(id===CUR.law);
   await say('me','本方援引'+l.src+'：'+l.text);
   if(right&&!TH.lawCited){
-    TH.lawCited=true;SFX.objection();showObjection('引<br>律');await sleep(700);heal();
+    TH.lawCited=true;SFX.objection();showObjection(I18N.t('引<br>律','CITE LAW'));await sleep(700);heal();
     logPick('庭上引律',true,'引对了条文');
     await say(CUR.bench,CUR.lawOk||'本庭注意到了。这一条正是本案的责任基础。请继续。');
-    await say('chen','条文一摆出来，争论的范围就定了。之后他说什么，都得在这条线里说。');
+    await say('chen',I18N.t('条文一摆出来，争论的范围就定了。之后他说什么，都得在这条线里说。','Once the provision is on the table, the scope of the argument is fixed. Whatever he says afterward must stay inside that line.'));
   }else if(right){
     await say(CUR.bench,'这一条本庭已经记下了，不必重复。');
   }else{
-    await say(CUR.opp,'仲裁庭，'+l.src+'管的是“'+l.scope+'”。本案争的是“'+CUR.issue+'”。对方引错了。');
+    await say(CUR.opp,I18N.t('仲裁庭，'+l.src+'管的是“'+l.scope+'”。本案争的是“'+CUR.issue+'”。对方引错了。','Presiding Arbitrator, '+l.src+' governs "'+l.scope+'." This case is about "'+CUR.issue+'." The citation is wrong.'));
     if(await hurt('庭上引律','引错条文'))return 'fail';
-    await say('chen','条文不是挑最响亮的，是挑和本案争点对得上的那条。回法典看看每一条管什么。');
+    await say('chen',I18N.t('条文不是挑最响亮的，是挑和本案争点对得上的那条。回法典看看每一条管什么。','Do not pick the loudest provision; pick the one that matches the issue in this case. Check the Code to see what each provision governs.'));
   }
 }
 
@@ -193,12 +193,12 @@ async function doChain(d){
     for(let i=0;i<d.links.length;i++){
       const ln=d.links[i];
       TH.chainHint=async function(){
-        if(hintedLinks[i]){toast('提示：这一环用「'+evDef(ln.need).name+'」');return;}
-        if(S.hints<=0){const ok=await ECON.rewarded('看一段短片，换一张提示卡');if(!ok){toast('提示卡用完了。');return;}}else ECON.hint();
-        hintedLinks[i]=true;toast('提示：这一环用「'+evDef(ln.need).name+'」');
+        if(hintedLinks[i]){toast(I18N.t('提示：这一环用「'+evDef(ln.need).name+'」','Hint: for this link use "'+evDef(ln.need).name+'"'));return;}
+        if(S.hints<=0){const ok=await ECON.rewarded(I18N.t('看一段短片，换一张提示卡','Watch a short clip for one hint card'));if(!ok){toast(I18N.t('提示卡用完了。','Hint cards are used up.'));return;}}else ECON.hint();
+        hintedLinks[i]=true;toast(I18N.t('提示：这一环用「'+evDef(ln.need).name+'」','Hint: for this link use "'+evDef(ln.need).name+'"'));
       };
       const items=evList(pool);
-      const idx=await choose(d.title+' · 第 '+(i+1)+'/'+d.links.length+' 环',ln.k+'：'+ln.ask,items,function(e){return '<b>'+esc(e.name)+'</b><div class="cevd">'+fill(e.desc)+'</div>';});
+      const idx=await choose(d.title+I18N.t(' · 第 ',' · Link ')+(i+1)+'/'+d.links.length+I18N.t(' 环',''),ln.k+'：'+ln.ask,items,function(e){return '<b>'+esc(e.name)+'</b><div class="cevd">'+fill(e.desc)+'</div>';});
       TH.chainHint=null;
       draft.push(items[idx].id);
       await say('me','<em>'+ln.k+'</em>：提交「'+items[idx].name+'」。');
@@ -207,16 +207,16 @@ async function doChain(d){
     await say('me','以上几份证据一并提交，请仲裁庭审查。');
     const hit=draft.filter(function(id,k){return id===d.links[k].need;}).length;
     if(hit===d.links.length){
-      SFX.objection();showObjection('成<br>链');await sleep(700);logPick('证据链',true,'链条闭合');
-      await say(CUR.bench,'本庭逐项审查完毕。'+cnNum(hit)+'项证据各自对应一个要件，链条完整。');
+      SFX.objection();showObjection(I18N.t('成<br>链','CHAIN FORMED'));await sleep(700);logPick(I18N.t('证据链','Evidence chain'),true,I18N.t('链条闭合','Chain closed'));
+      await say(CUR.bench,I18N.t('本庭逐项审查完毕。'+cnNum(hit)+'项证据各自对应一个要件，链条完整。','The tribunal has reviewed each item. All '+hit+' items correspond to one element each; the chain is complete.'));
       if(d.doctrine&&!docSaid)await say('chen',d.doctrine);
       return;
     }
-    await say(CUR.bench,'本庭审查结果：'+cnNum(d.links.length)+'项之中，'+cnNum(hit)+'项站得住。具体是哪几项，本庭不替代理人判断。');
-    if(await hurt('证据链 · 第'+round+'次','链条没扣上'))return 'fail';
+    await say(CUR.bench,I18N.t('本庭审查结果：'+cnNum(d.links.length)+'项之中，'+cnNum(hit)+'项站得住。具体是哪几项，本庭不替代理人判断。','Result of the review: of '+d.links.length+' items, '+hit+' hold. Which ones, the tribunal will not decide for counsel.'));
+    if(await hurt(I18N.t('证据链 · 第','Evidence chain · attempt ')+round+I18N.t('次',''),I18N.t('链条没扣上','Chain not closed')))return 'fail';
     await say(CUR.opp,'链条不完整，对方的主张就立不起来。');
-    if(round===1)await say('chen',hit===0?'一环都没对上。回头看每一环要证明的到底是什么，别只看哪份材料分量重。':'有对的，也有错的。仲裁庭不会告诉你是哪几环。想清楚每一环要证明什么，再交一次。');
-    else await say('chen','对上了 '+cnNum(hit)+' 环。别整条推倒重来，从你最没把握的那一环改起；实在拿不准，可以用一张提示卡。');
+    if(round===1)await say('chen',hit===0?I18N.t('一环都没对上。回头看每一环要证明的到底是什么，别只看哪份材料分量重。','Not one link matched. Look again at what each link is meant to prove; do not just weigh which document looks heavy.'):I18N.t('有对的，也有错的。仲裁庭不会告诉你是哪几环。想清楚每一环要证明什么，再交一次。','Some are right and some are wrong. The tribunal will not tell you which. Think through what each link must prove, then submit again.'));
+    else await say('chen',I18N.t('对上了 '+cnNum(hit)+' 环。别整条推倒重来，从你最没把握的那一环改起；实在拿不准，可以用一张提示卡。','Matched '+hit+' link(s). Do not tear up the whole chain; start from the link you are least sure of. If you really cannot tell, use a hint card.'));
     if(round>=2&&d.doctrine&&!docSaid){docSaid=true;await say('chen',d.doctrine);}
   }
 }
@@ -246,12 +246,12 @@ async function doPrecCite(d){
   MUSIC.setMode('tension');
   await say(CUR.bench,'开庭前先处理一个程序问题。对方代理人申请就本方代理人此前的公开立场发问。本庭准许。');
   await say(d.opp,f(d.hook));
-  await say('chen','重演室把你上一章的表态调出来了。真正的对手也会这么研究你。');
-  const i=await choose('对方翻出了你说过的话','你上一章选择了「'+tag+'」。',d.opts.map(function(o){return {x:f(o.x),ok:!!o.ok};}));
+  await say('chen',I18N.t('重演室把你上一章的表态调出来了。真正的对手也会这么研究你。','The replay room has pulled up the position you took last chapter. A real opponent will study you the same way.'));
+  const i=await choose(I18N.t('对方翻出了你说过的话','Your own words, produced'),I18N.t('你上一章选择了「'+tag+'」。','Last chapter you chose "'+tag+'."'),d.opts.map(function(o){return {x:f(o.x),ok:!!o.ok};}));
   const o=d.opts[i];
-  if(o.ok){SFX.objection();showObjection('区<br>分');await sleep(700);heal();logPick('旧话重提',true,'区分成功');
-    await say(CUR.bench,'本庭接受代理人的区分。两案情况不同，前述立场与本案无关。');await say('chen',f(o.fa));}
-  else{await say(d.opp,f(o.corr));if(await hurt('旧话重提','被旧话拿住'))return 'fail';await say('chen',f(o.fa));}
+  if(o.ok){SFX.objection();showObjection(I18N.t('区<br>分','DISTINGUISH'));await sleep(700);heal();logPick(I18N.t('旧话重提','Old words revived'),true,I18N.t('区分成功','Distinguished'));
+    await say(CUR.bench,I18N.t('本庭接受代理人的区分。两案情况不同，前述立场与本案无关。','The tribunal accepts counsel\'s distinction. The two cases differ, and the earlier position is irrelevant to this one.'));await say('chen',f(o.fa));}
+  else{await say(d.opp,f(o.corr));if(await hurt(I18N.t('旧话重提','Old words revived'),I18N.t('被旧话拿住','Caught by your own record')))return 'fail';await say('chen',f(o.fa));}
 }
 
 /* ---------------- 裁判记录 ---------------- */
@@ -285,19 +285,19 @@ const LEAN_READ={
 async function doLean(d){
   const n=(S.leanLog||[]).length+Object.keys(S.judge||{}).length;
   if(n<2){
-    await say(d.opp,'我方想查一查对方代理人的过往记录，几乎是一张白纸。');
-    await say('chen','你在“裁判练习”里落的槌太少，对方抓不到把柄。不过以后你写下的每一笔，都会有人来读。');
+    await say(d.opp,I18N.t('我方想查一查对方代理人的过往记录，几乎是一张白纸。','We would like to examine the opposing representative\'s record. It is almost a blank page.'));
+    await say('chen',I18N.t('你在“裁判练习”里落的槌太少，对方抓不到把柄。不过以后你写下的每一笔，都会有人来读。','You have dropped too few gavels in bench practice for the opponent to find a handle. But every stroke you write from now on will be read.'));
     return;
   }
   const top=leanTop(),key=top&&LEAN_READ[top.k]?top.k:'mixed',C=LEAN_READ[key];
   MUSIC.setMode('tension');
-  await say(CUR.bench,'本庭准许对方就代理人的过往表态和裁判记录发问。');
+  await say(CUR.bench,I18N.t('本庭准许对方就代理人的过往表态和裁判记录发问。','The tribunal permits the opposing side to question the representative on past positions and bench records.'));
   await say(d.opp,C.hook);
   if(d.tail)await say(CUR.bench,d.tail);
-  const i=await choose('对方读出了你的偏向','对方的判断：<b style="color:'+(top?top.c:'#A8B4CC')+'">'+(top?top.n:'持中')+'</b>（依据你此前 '+n+' 次取舍）',C.opts);
+  const i=await choose(I18N.t('对方读出了你的偏向','Your leanings, read out'),I18N.t('对方的判断：<b style="color:'+(top?top.c:'#A8B4CC')+'">'+(top?top.n:'持中')+'</b>（依据你此前 '+n+' 次取舍）','Their read: <b style="color:'+(top?top.c:'#A8B4CC')+'">'+(top?top.n:'Balanced')+'</b> (from your '+n+' previous choices)'),C.opts);
   const o=C.opts[i];
-  if(o.ok){SFX.objection();showObjection();await sleep(650);heal();logPick('裁判记录',true,'用自己的记录反驳');await say(CUR.bench,'代理人的说明前后一致。对方的质疑不予采纳。');}
-  else{await say(d.opp,'请书记员记下这句话。');if(await hurt('裁判记录','被自己的记录拿住'))return 'fail';}
+  if(o.ok){SFX.objection();showObjection();await sleep(650);heal();logPick(I18N.t('裁判记录','Bench record'),true,I18N.t('用自己的记录反驳','Answered with your own record'));await say(CUR.bench,I18N.t('代理人的说明前后一致。对方的质疑不予采纳。','Counsel\'s account is consistent throughout. The challenge is not adopted.'));}
+  else{await say(d.opp,I18N.t('请书记员记下这句话。','Let the clerk record that sentence.'));if(await hurt(I18N.t('裁判记录','Bench record'),I18N.t('被自己的记录拿住','Caught by your own record')))return 'fail';}
   await say('chen',o.fa);
 }
 
@@ -305,31 +305,31 @@ async function doLean(d){
 async function doSettle(d){
   MUSIC.setMode('court');
   await say(d.opp,d.offer);
-  await say(CUR.bench,'本庭依惯例询问'+CUR.role+'代理人：是否接受和解？');
-  const i=await choose('这一案怎么收场','',[
-    {x:'拒绝和解，请仲裁庭作出裁决。<div class="cevd">风险更高。但只有裁决会把规则说清楚，留下先例。</div>'},
-    {x:(CUR.role==='申请人'?'接受和解。拿到钱，到此为止。':'接受和解。各退一步，到此为止。')+'<div class="cevd">稳妥。但仲裁庭不会就法律问题表态，也不会留下先例。</div>'}]);
+  await say(CUR.bench,I18N.t('本庭依惯例询问'+CUR.role+'代理人：是否接受和解？','As is customary, the tribunal asks the '+CUR.role+'\'s representative: do you accept a settlement?'));
+  const i=await choose(I18N.t('这一案怎么收场','How this case ends'),'',[
+    {x:I18N.t('拒绝和解，请仲裁庭作出裁决。<div class="cevd">风险更高。但只有裁决会把规则说清楚，留下先例。</div>','Refuse the settlement and ask the tribunal to award.<div class="cevd">Riskier. But only an award states the rule clearly and leaves a precedent.</div>')},
+    {x:(CUR.role==='申请人'?I18N.t('接受和解。拿到钱，到此为止。','Accept the settlement. Take the money and stop here.'):I18N.t('接受和解。各退一步，到此为止。','Accept the settlement. Each side steps back, and stop here.'))+'<div class="cevd">'+I18N.t('稳妥。但仲裁庭不会就法律问题表态，也不会留下先例。','Safe. But the tribunal takes no position on the law, and no precedent is left.')+'</div>'}]);
   if(i===1){
-    TH.ending='settle';logPick('收场方式',true,'和解');noteLean('open');
+    TH.ending='settle';logPick(I18N.t('收场方式','How the case ends'),true,I18N.t('和解','Settlement'));noteLean('open');
     await say(CUR.bench,'双方达成和解。本庭记录和解协议，本案终结，不作实体裁决。');
     await say('chen',d.cost);
     return finishChapter({settled:true});
   }
-  TH.ending='verdict';logPick('收场方式',true,'请求裁决');noteLean('order');
-  await say('me',CUR.role==='申请人'?'本方拒绝和解，请仲裁庭作出裁决。我们要的不只是钱，还有一个说法。':'本方拒绝和解，请仲裁庭作出裁决。这件事该说清楚。');
+  TH.ending='verdict';logPick(I18N.t('收场方式','How the case ends'),true,I18N.t('请求裁决','Award requested'));noteLean('order');
+  await say('me',CUR.role==='申请人'?I18N.t('本方拒绝和解，请仲裁庭作出裁决。我们要的不只是钱，还有一个说法。','We refuse the settlement and ask the tribunal to award. What we want is not only the money, but a ruling.'):I18N.t('本方拒绝和解，请仲裁庭作出裁决。这件事该说清楚。','We refuse the settlement and ask the tribunal to award. This matter should be made clear.'));
 }
 
 /* ---------------- 终局陈述 ---------------- */
 async function doFinal(d){
   MUSIC.setMode('tension');
-  await say('chen',d.lead||'最后陈述。挑一句说完之后对方再也翻不过来的话。');
-  const i=await choose('终局陈述',d.ask,d.opts);
+  await say('chen',d.lead||I18N.t('最后陈述。挑一句说完之后对方再也翻不过来的话。','Closing statement. Pick the one line your opponent can never get around.'));
+  const i=await choose(I18N.t('终局陈述','Closing statement'),d.ask,d.opts);
   const o=d.opts[i];
   if(!o.ok){
     await say(CUR.opp,o.corr);
     if(await hurt('终局陈述',o.tag||'失着'))return 'fail';
     await say('chen',o.fa);
-    await say('chen','还来得及补救。改用正确的依据再说一遍。');
+    await say('chen',I18N.t('还来得及补救。改用正确的依据再说一遍。','There is still time to fix it. Say it again with the correct basis.'));
     await say('me',d.opts.find(function(x){return x.ok;}).x);
     return;
   }

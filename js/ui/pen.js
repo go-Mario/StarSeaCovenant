@@ -49,9 +49,9 @@ const Pen=(function(){
   let view='home',mode='',topic='',cur=null,armed='',anim=0,drafts={};
   function P(){if(!S.pen)S.pen={letters:[],arts:[]};return S.pen;}
   function unlocked(){return SAVE.chDone('ch6');}
-  function dateStr(t){const d=new Date(t||Date.now());return d.getFullYear()+' 年 '+(d.getMonth()+1)+' 月 '+d.getDate()+' 日';}
+  function dateStr(t){const d=new Date(t||Date.now());return I18N.language==='en'?d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'):d.getFullYear()+' 年 '+(d.getMonth()+1)+' 月 '+d.getDate()+' 日';}
   /* 条文编号：一、十一、二十、二十一…… */
-  function artNo(n){const D=['零','一','二','三','四','五','六','七','八','九'];if(n<=10)return cnNum(n);if(n<20)return '十'+(n%10?D[n%10]:'');return D[Math.floor(n/10)]+'十'+(n%10?D[n%10]:'');}
+  function artNo(n){if(I18N.language==='en')return String(n);const D=['零','一','二','三','四','五','六','七','八','九'];if(n<=10)return cnNum(n);if(n<20)return '十'+(n%10?D[n%10]:'');return D[Math.floor(n/10)]+'十'+(n%10?D[n%10]:'');}
   function layer(){return byId('pen');}
   function set(h){
     cancelAnimationFrame(anim);
@@ -228,7 +228,7 @@ const Pen=(function(){
   function topics(){
     view='topics';
     const n=P().arts.length;
-    if(n>=KEEP_A){toast('公约已经写满 '+KEEP_A+' 条了。可以先删掉几条再写。');doc();return;}
+    if(n>=KEEP_A){toast(I18N.t('公约已经写满 '+KEEP_A+' 条了。可以先删掉几条再写。','The Code already holds '+KEEP_A+' articles. Delete a few before writing more.'));doc();return;}
     let h=head('我的星海公约','起草第 '+artNo(n+1)+' 条','先选一个题目。用你自己的话写，不用像法条，但要让别人看得懂、照着做。');
     h+='<div class="pe-topics">'+PEN_TOPICS.map(function(t){return '<button class="pe-topic" data-t="'+t.id+'"><b>'+t.t+'</b>'+(t.law?'<span>现实中有规定</span>':'<span>自由命题</span>')+'</button>';}).join('')+'</div>';
     if(n)h+='<div class="btnrow pe-acts"><button class="btn ghost" id="peDoc">'+icon('ic-law')+'看看我的公约（'+n+' 条）</button></div>';
@@ -239,7 +239,7 @@ const Pen=(function(){
   function write(text){
     view='write';const T=PEN_TOPIC_BY[topic],n=P().arts.length+1,d=text!=null?text:(drafts['law:'+topic]||'');
     let h=head('起草第'+artNo(n)+'条',T.t,'可以想一想三件事：谁来做？做什么（应当 / 不得 / 可以）？做不到怎么办？');
-    h+='<div class="pe-sheet paper"><div class="pe-artno">第 '+artNo(n)+' 条</div>'+
+    h+='<div class="pe-sheet paper"><div class="pe-artno">'+I18N.t('第 ','Article ')+artNo(n)+I18N.t(' 条','')+'</div>'+
       '<textarea id="peText" class="pe-ta law" maxlength="'+MAXA+'" placeholder="例如：各国应当……">'+esc(d)+'</textarea>'+
       '<div class="pe-meta"><span class="pe-seedk">'+(T.seed?'从这里开头也行：':'这个题目由你来定。')+'</span><span id="peCnt" class="pe-cnt"></span></div>'+
       (T.seed?'<div class="pe-seeds"><button class="pe-seed" id="peSeed">'+esc(T.seed)+'</button></div>':'')+
@@ -269,7 +269,7 @@ const Pen=(function(){
   function check(text){
     view='check';const T=PEN_TOPIC_BY[topic],n=P().arts.length+1;
     let h=head('起草第'+artNo(n)+'条','对照一下','');
-    h+='<div class="pe-sheet paper pe-read"><div class="pe-artno">第 '+artNo(n)+' 条<small>'+T.t+'</small></div><div class="pe-body law">'+esc(text)+'</div></div>';
+    h+='<div class="pe-sheet paper pe-read"><div class="pe-artno">'+I18N.t('第 ','Article ')+artNo(n)+I18N.t(' 条','')+'<small>'+T.t+'</small></div><div class="pe-body law">'+esc(text)+'</div></div>';
     h+='<div class="pe-card"><h4>写清了吗</h4>'+CHK.map(function(c){const ok=c.re.test(text);return '<div class="pe-chk '+(ok?'ok':'no')+'"><i>'+(ok?'✓':'○')+'</i><div><b>'+c.k+'</b><span>'+(ok?c.ok:c.no)+'</span></div></div>';}).join('')+
       '<div class="pe-note">这不是打分。真实的条约里，也常常只写前两样，后果放在别的条文里。</div></div>';
     h+='<div class="pe-card real"><h4>现实中'+(T.law?'：'+T.law:'')+'</h4><p>'+T.real+'</p></div>';
@@ -345,7 +345,7 @@ const Pen=(function(){
   function docCard(){
     const W=1080,cv=document.createElement('canvas'),g=cv.getContext('2d'),arts=P().arts;
     g.font='36px '+SERIF;
-    const blocks=arts.map(function(a,i){return {no:'第 '+artNo(i+1)+' 条',lines:wrap(g,a.text,W-380)};});
+    const blocks=arts.map(function(a,i){return {no:I18N.t('第 ','Article ')+artNo(i+1)+I18N.t(' 条',''),lines:wrap(g,a.text,W-380)};});
     const H=Math.max(1350,560+blocks.reduce(function(s,b){return s+b.lines.length*60+40;},0)+260);
     cv.width=W;cv.height=H;paperBg(g,W,H);
     g.textAlign='center';g.fillStyle='#1D2230';g.font='700 64px '+SERIF;g.fillText('星 海 公 约',W/2,210);

@@ -45,11 +45,11 @@ const Panels=(function(){
       b+='<h3>术语表</h3><div class="muted small">剧情里带点状下划线的词都可以点。这里是全部术语。</div><div class="term-grid">'+Object.keys(GLOSSARY).map(function(k){const seen=S.terms.indexOf(k)>=0;return '<span class="term'+(seen?' seen':'')+'" data-term="'+esc(k)+'">'+esc(k)+'</span>';}).join('')+'</div>';
     }else if(tab==='precs'){
       b+='<div class="muted small">每一次以裁决结案，都会写下一条先例。和解结案不会。</div>';
-      b+=PRECS.map(function(p){const on=S.precs.indexOf(p.id)>=0;return '<div class="law-card'+(on?'':' off')+'"><div class="lc-h"><b>'+(on?p.name:'？？？')+'</b><span>'+CHAPTERS[p.ch].year+'</span></div><div class="lc-t">'+(on?p.rule:'在第'+cnNum(CH_ORDER.indexOf(p.ch)+1)+'章以裁决结案后写入。')+'</div></div>';}).join('');
+      b+=PRECS.map(function(p){const on=S.precs.indexOf(p.id)>=0;return '<div class="law-card'+(on?'':' off')+'"><div class="lc-h"><b>'+(on?p.name:'？？？')+'</b><span>'+CHAPTERS[p.ch].year+'</span></div><div class="lc-t">'+(on?p.rule:I18N.t('在第'+cnNum(CH_ORDER.indexOf(p.ch)+1)+'章以裁决结案后写入。','Written when Chapter '+(CH_ORDER.indexOf(p.ch)+1)+' closes by award.'))+'</div></div>';}).join('');
     }else if(tab==='hist'){
       b+='<div class="muted small">星图外圈航迹上的每个标记都是一张卡片。<span class="chip">史实</span><span class="chip amber">计划</span><span class="chip fact">推演</span><span class="chip red">游戏故事</span></div>';
       ERAS.forEach(function(E){
-        b+='<h3>'+E.from+'—'+E.to+'　'+E.name+'</h3>';
+        b+='<h3>'+E.from+'—'+E.to+'　'+I18N.t(E.name,E.en)+'</h3>';
         b+=HISTORY.filter(function(h){return h.y>=E.from&&h.y<=E.to;}).map(function(h){const seen=S.hist.indexOf(h.id)>=0;return '<button class="row-item hist-row'+(seen?'':' new')+'" data-hist="'+h.id+'"><span class="ri-y">'+h.y+'</span><span class="ri-t">'+esc(h.t)+'</span><span class="ri-r">'+kindChip(h.kind)+'</span></button>';}).join('');
       });
     }else if(tab==='achs'){
@@ -93,12 +93,12 @@ const Panels=(function(){
       try{
         if(file.size>2*1024*1024)throw Error('存档超过 2 MB，请选择游戏导出的 JSON 文件');
         const text=await file.text(),next=SAVE.decode(text);
-        if(!confirm('导入「'+next.profile.name+'」的存档（声望 '+next.rep+'）并替换当前进度？建议先导出当前备份。'))return;
+        if(!confirm(I18N.t('导入「'+next.profile.name+'」的存档（声望 '+next.rep+'）并替换当前进度？建议先导出当前备份。','Import the save of "'+next.profile.name+'" (reputation '+next.rep+') and replace current progress? Export a backup first.')))return;
         if(SAVE.import(text))location.reload();
       }catch(err){toast(esc(err.message||'读取失败，请选择有效的存档文件'),4500);}
       finally{fi.value='';}
     };}
-    const rs=byId('stReset');if(rs)rs.onclick=function(){if(confirm('清空全部进度、星尘和成就？请先导出需要保留的备份。')){if(SAVE.reset())location.reload();}};
+    const rs=byId('stReset');if(rs)rs.onclick=function(){if(confirm(I18N.t('清空全部进度、星尘和成就？请先导出需要保留的备份。','Erase all progress, stardust and achievements? Export any backup you want to keep first.'))){if(SAVE.reset())location.reload();}};
   }
   function kindChip(k){return k==='fact'?'<span class="chip">史实</span>':k==='plan'?'<span class="chip amber">计划</span>':k==='spec'?'<span class="chip fact">推演</span>':'<span class="chip red">游戏故事</span>';}
   function leanChart(){
@@ -228,7 +228,7 @@ const Panels=(function(){
     }
     const q=QUIZ_BY[qz.ids[qz.i]],r=qz.res[qz.i];
     b+='<div class="qz-top">'+dots+'<div class="qz-time'+(r?' off':'')+'"><i id="qzBar"></i></div></div>';
-    b+='<div class="qz-card'+(r?(r.ok?' ok':' bad'):'')+'" '+(r?'':'style="--qd:'+qz.i+'"')+'><div class="qz-no">第 '+(qz.i+1)+' 句 / 共 '+QN+' 句</div><div class="qz-s">'+fill(q.s)+'</div>';
+    b+='<div class="qz-card'+(r?(r.ok?' ok':' bad'):'')+'" '+(r?'':'style="--qd:'+qz.i+'"')+'><div class="qz-no">'+I18N.t('第 ','Sentence ')+(qz.i+1)+I18N.t(' 句 / 共 ',' of ')+QN+I18N.t(' 句','')+'</div><div class="qz-s">'+fill(q.s)+'</div>';
     if(!r)b+='</div><div class="qz-btns"><button class="qz-b yes" data-qa="1"><b>对</b><small>← 或 1</small></button><button class="qz-b no" data-qa="0"><b>错</b><small>→ 或 2</small></button></div>';
     else b+='<div class="qz-verdict"><span class="stamp">'+(r.to?'超时':r.ok?'判对了':'判错了')+'</span><em>这句话是<b>'+(q.a?'对':'错')+'</b>的</em></div><div class="qz-why">'+fill(q.why)+'</div></div>'+
       '<button class="btn block qz-next" id="qzNext">'+(qz.i<QN-1?'下一句':'看结果')+'</button>';

@@ -13,6 +13,7 @@
    ===================================================================== */
 const WORK_EPOCH=Date.UTC(2077,0,4);              /* 第 0 天：2077 年 1 月 4 日，周一，报到 */
 const WK=['周日','周一','周二','周三','周四','周五','周六'];
+  function wdLetter(i){return I18N.language==='en'?'SMTWTFS'[i]:WK[i].slice(1);}
 const W_SPECIAL=(function(){
   const o={'2077-1-17':['补班','work'],'2077-1-31':['补班','work']};
   for(let d=23;d<=30;d++)o['2077-1-'+d]=[d===23?'除夕':'春节休庭','rest'];
@@ -27,10 +28,10 @@ const Work=(function(){
     if(wd===0||wd===6)return {label:'周末',work:false,wd:wd};
     return {label:'工作日',work:true,wd:wd};
   }
-  function dateStr(day){const d=D(day);return (d.getUTCMonth()+1)+'月'+d.getUTCDate()+'日';}
+  function dateStr(day){const d=D(day);return I18N.language==='en'?d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0'):(d.getUTCMonth()+1)+'月'+d.getUTCDate()+'日';}
   function clock(min){const nd=min>=DAY;const m=((min%DAY)+DAY)%DAY;return (nd?'次日 ':'')+String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');}
-  function hours(m){const h=m/60;return (Math.round(h*10)/10).toString().replace(/\.0$/,'')+' 小时';}
-  function energyWord(e){return e>=75?'精神饱满':e>=50?'状态尚可':e>=25?'有些疲惫':'已经透支';}
+  function hours(m){const h=m/60;const v=(Math.round(h*10)/10).toString().replace(/\.0$/,'');return I18N.language==='en'?v+' h':v+' 小时';}
+  function energyWord(e){return I18N.t(e>=75?'精神饱满':e>=50?'状态尚可':e>=25?'有些疲惫':'已经透支',e>=75?'Energized':e>=50?'Holding up':e>=25?'Getting tired':'Running on empty');}
   function init(){
     const def={day:0,min:START,ot:0,otAll:0,leave:5,year:2077,coffee:0,coffeeBlock:-1,week:[],lastWeek:null,seen:[],inbox:[],mail:null,
       rested:false,regular:false,hearings:0,worked:0,notes:[],compUsed:0,leaveUsed:0,makeupHearing:false,allNighter:0};
@@ -130,7 +131,7 @@ const Work=(function(){
   function askClockOut(){
     const W=init(),t=dayType(W.day),tm=dayType(W.day+1);
     const lateTxt=W.min>=1320?'已经 '+clock(W.min)+' 了。保安刚来过一次，说灯他帮你关。':(W.min<END&&t.work?'现在是 '+clock(W.min)+'，还没到下班时间。早走也行，今天的事做完了就好。':'现在是 '+clock(W.min)+'。');
-    const opts=[{t:'打卡下班',d:tm.work?'明天 09:00 照常上班。':'明天'+(tm.rest?'休庭':tm.label)+'，好好歇着。',k:'out'}];
+    const opts=[{t:'打卡下班',d:tm.work?'明天 09:00 照常上班。':I18N.t('明天'+(tm.rest?'休庭':tm.label)+'，好好歇着。','Tomorrow is '+(tm.rest?'a recess':'a workday')+'. Rest well.'),k:'out'}];
     if(!tm.work)opts.push({t:'明天来加班',d:'非工作日的工时全部计入调休。',k:'wk'});
     if(W.ot>=480&&tm.work)opts.push({t:'明天调休',d:'用掉 8 小时调休额度，明天不来。',k:'comp'});
     if(W.leave>0&&tm.work)opts.push({t:'明天请一天年假',d:'今年还剩 '+W.leave+' 天。',k:'leave'});
@@ -309,7 +310,7 @@ const Work=(function(){
     const ws=W.day-((t.wd+6)%7);
     h+='<h3>值班表<small>本周</small></h3><div class="roster">';
     for(let i=0;i<7;i++){const d=ws+i,tt=dayType(d);
-      h+='<div class="rd'+(d===W.day?' now':'')+(tt.work?'':' off')+(tt.label==='补班'?' make':'')+(tt.rest?' rest':'')+'"><b>'+WK[tt.wd].slice(1)+'</b><span>'+D(d).getUTCDate()+'</span><em>'+(tt.label==='工作日'?'班':tt.label==='周末'?'休':tt.label==='补班'?'补班':tt.label==='除夕'?'除夕':'休庭')+'</em></div>';}
+      h+='<div class="rd'+(d===W.day?' now':'')+(tt.work?'':' off')+(tt.label==='补班'?' make':'')+(tt.rest?' rest':'')+'"><b>'+wdLetter(tt.wd)+'</b><span>'+D(d).getUTCDate()+'</span><em>'+I18N.text(tt.label==='工作日'?'班':tt.label==='周末'?'休':tt.label==='补班'?'补班':tt.label==='除夕'?'除夕':'休庭')+'</em></div>';}
     h+='</div>';
     /* 工时单 */
     const tot=W.week.reduce(function(a,x){return a+x.m;},0);
@@ -332,7 +333,7 @@ const Work=(function(){
       else if(k==='leave')takeLeave();
     };});
   }
-  return {init:init,spend:spend,hearingState:hearingState,useRest:useRest,stateLine:function(k){return STATE_LINE[k||''];},
+  return {init:init,spend:spend,hearingState:hearingState,useRest:useRest,stateLine:function(k){return I18N.text(STATE_LINE[k||'']);},
     afterHearing:afterHearing,coffee:coffee,clockOut:clockOut,askClockOut:askClockOut,takeComp:takeComp,takeLeave:takeLeave,
     tick:tick,hud:hud,memoOn:memoOn,closeMemo:closeMemo,officeHTML:officeHTML,bindOffice:bindOffice,
     dayType:dayType,dateStr:dateStr,clock:clock,hours:hours,today:function(){return init().day;},MAIL:MAIL};

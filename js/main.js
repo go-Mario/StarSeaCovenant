@@ -4,7 +4,8 @@
    ===================================================================== */
 (function boot(){
   try{
-    registerPortraits();SCENES.register();FX.init();
+    I18N.localizeAll();registerPortraits();SCENES.register();FX.init();
+    {const ow=byId('objWord');if(ow)ow.innerHTML=I18N.t('异<br>议','OBJECTION');}
     Hub.init();HUD.refresh();syncAudioBtns();
     byId('hub').classList.remove('on');
   }catch(e){showFatal('初始化失败：'+(e&&e.message||e));}
