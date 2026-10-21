@@ -1,0 +1,81 @@
+// Browser verification of save controls and the self-contained offline build.
+const {chromium}=require('playwright');
+const assert=require('node:assert/strict');
+const fs=require('node:fs/promises');
+const path=require('node:path');
+const {pathToFileURL}=require('node:url');
+const BASE=process.env.SS_URL||'http://127.0.0.1:8765/index.html';
+const OUT=process.argv[2]||path.join(__dirname,'out/portable-save');
+(async()=>{
+  await fs.mkdir(OUT,{recursive:true});
+  const browser=await chromium.launch();
+  try{
+    for(const [label,width,height] of [['phone',390,844],['desktop',1280,800]]){
+      const context=await browser.newContext({viewport:{width,height},isMobile:label==='phone',hasTouch:label==='phone'});
+      const page=await context.newPage(),errors=[];
+      page.on('pageerror',e=>{errors.push(e.message);console.error(label+' page error: '+e.message);});
+      await page.goto(BASE+'#hub');
+      await page.locator('#hub.on').waitFor().catch(async e=>{console.error(await page.locator('#fatalbox').textContent());throw e;});
+      await page.click('#hudMe');
+      await page.click('[data-tab="set"]');
+      await page.locator('#stExport').waitFor();
+      await page.screenshot({path:path.join(OUT,label+'-settings.png')});
+      await page.evaluate(()=>{S.rep=23;S.profile.name='测试';S.sound=false;S.bgm=false;save();});
+      const downloadPromise=page.waitForEvent('download');
+      await page.click('#stExport');
+      const download=await downloadPromise;
+      const exported=path.join(OUT,label+'-save.json');
+      await download.saveAs(exported);
+      const data=JSON.parse(await fs.readFile(exported,'utf8'));
+      assert.equal(data.state.rep,23);
+      await page.evaluate(()=>{S.rep=1;save();});
+      page.once('dialog',d=>d.accept());
+      await page.setInputFiles('#stSaveFile',exported);
+      await page.waitForFunction(()=>S.rep===23);
+      await page.locator('#hub.on').waitFor();
+      await page.click('#hudMe');
+      await page.click('[data-tab="set"]');
+      await page.setInputFiles('#stSaveFile',{name:'invalid.json',mimeType:'application/json',buffer:Buffer.from('{"foo":1}')});
+      await page.waitForFunction(()=>document.getElementById('toast').textContent.includes('不是可识别'));
+      assert.equal(await page.evaluate(()=>S.rep),23);
+      // Native keyboard activation must only toggle once.
+      await page.focus('#stSnd');
+      await page.keyboard.press('Enter');
+      assert.equal(await page.evaluate(()=>S.sound),true);
+      assert.equal(await page.evaluate(()=>TH.running),false);
+      const broken='{"profile":null}';
+      await page.evaluate(raw=>{localStorage.removeItem('SSv4.backup');localStorage.setItem('SSv4',raw);},broken);
+      await page.reload();
+      await page.locator('#hub.on').waitFor();
+      await page.click('#hudMe');
+      await page.click('[data-tab="set"]');
+      await page.locator('#saveNotice').waitFor({state:'visible'});
+      assert.equal(await page.evaluate(()=>localStorage.getItem('SSv4')),broken);
+      assert.equal(await page.evaluate(()=>SAVE_STATUS.blocked),true);
+      assert.deepEqual(errors,[]);
+      console.log('ok '+label+': export/import, invalid file, keyboard, corrupt-save protection');
+      await context.close();
+    }
+    const context=await browser.newContext({viewport:{width:390,height:844}});
+    const page=await context.newPage(),errors=[],network=[];
+    page.on('pageerror',e=>errors.push(e.message));
+    page.on('request',r=>{if(/^https?:/.test(r.url()))network.push(r.url());});
+    const file=pathToFileURL(path.join(__dirname,'../../dist/starsea.html')).href;
+    await page.goto(file+'#hub');
+    await page.locator('#hub.on').waitFor();
+    assert.equal(await page.evaluate(()=>CH_ORDER.length),6);
+    await page.click('#hudMe');
+    await page.click('[data-tab="set"]');
+    await page.locator('#stExport').waitFor();
+    assert.equal(await page.locator('script[src],link[rel="stylesheet"]').count(),0);
+    await page.screenshot({path:path.join(OUT,'offline-phone.png')});
+    await page.goto(file+'?intro=clips');
+    await page.evaluate(()=>{S.profile.introSeen=false;S.profile.created=true;});
+    await page.click('#bootGo');
+    await page.waitForFunction(()=>Array.from(document.querySelectorAll('#intro video')).some(v=>v.readyState>=2&&v.currentSrc.startsWith('data:video/webm')));
+    assert.deepEqual(network,[]);
+    assert.deepEqual(errors,[]);
+    console.log('ok offline build: six chapters, settings, embedded video playback, no HTTP requests');
+    await context.close();
+  }finally{await browser.close();}
+})().catch(e=>{console.error(e);process.exitCode=1;});

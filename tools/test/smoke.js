@@ -25,6 +25,8 @@ const OUT=process.argv[2]||__dirname+'/out/smoke';
     await p.screenshot({path:OUT+'/'+vp.n+'-05-theater.png'});
     await p.click('#pvBack');await p.waitForTimeout(1200);
     await p.screenshot({path:OUT+'/'+vp.n+'-06-back.png'});
+    await p.click('#btnStories');await p.locator('.ns-title').waitFor();
+    await p.screenshot({path:OUT+'/'+vp.n+'-07-stories.png'});
     const fb=await p.$eval('#fatalbox',x=>x.style.display==='block'?x.textContent:'');
     console.log(vp.n,'errors:',errs.length?errs:'none',fb?('FATAL '+fb):'');
     await ctx.close();

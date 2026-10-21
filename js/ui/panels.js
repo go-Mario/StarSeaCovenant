@@ -9,7 +9,7 @@ const Panels=(function(){
     const p=byId('panel');
     p.innerHTML='<div class="pn-sheet paper"><div class="pn-head"><button class="pn-back" id="pnBack">'+icon('ic-back')+'</button><h2>'+title+'</h2></div>'+
       (tabs?'<div class="pn-tabs">'+tabs+'</div>':'')+'<div class="pn-body">'+body+'</div></div>';
-    p.classList.add('on');
+    p.classList.add('on');I18N.apply(p);
     byId('pnBack').onclick=function(){SFX.tap();close();};
     $$('#panel [data-tab]').forEach(function(b){b.onclick=function(){SFX.tap();tab=b.getAttribute('data-tab');render();};});
   }
@@ -35,7 +35,7 @@ const Panels=(function(){
       const top=leanTop();
       b+='<h3>裁判偏向</h3>'+leanChart()+(top?'<div class="small" style="margin-top:6px">偏向：<b style="color:'+top.c+'">'+top.n+'</b>。'+top.d+'</div>':'');
       const sats=(S.games.sat&&S.games.sat.list)||[];
-      if(sats.length)b+='<h3>我的卫星</h3>'+sats.map(function(s){return '<div class="row-item"><span class="ri-t">「'+esc(s.name)+'」'+s.orb+' · '+s.mis+'</span><span class="ri-r">'+(s.reg?'<span class="chip ok">已登记</span>':'<span class="chip red">未登记</span>')+'</span></div>';}).join('');
+      if(sats.length)b+='<h3>我的卫星</h3>'+sats.map(function(s){return '<div class="row-item"><span class="ri-t">「'+esc(s.name)+'」'+esc(s.orb)+' · '+esc(s.mis)+'</span><span class="ri-r">'+(s.reg?'<span class="chip ok">已登记</span>':'<span class="chip red">未登记</span>')+'</span></div>';}).join('');
       if(S.games.sling&&S.games.sling.record)b+='<h3>我的金唱片</h3><div class="small">'+S.games.sling.record.map(esc).join(' · ')+'</div>';
       if(S.reply)b+='<h3>人类的第一句回答</h3><div class="serif">“'+esc(S.reply)+'”</div>';
       if(S.pen&&(S.pen.letters.length||S.pen.arts.length))b+='<h3>亲笔</h3><div class="small">写过 '+S.pen.letters.length+' 封信，公约起草了 '+S.pen.arts.length+' 条。都在开庭剧场的“回信台”里。</div>';
@@ -65,12 +65,16 @@ const Panels=(function(){
           return '<div class="shop-item cos"><span class="cos-prev '+c.css+'">'+(kind==='seal'?'印':'纸')+'</span><div><b>'+c.name+'</b><div class="muted small">'+c.d+'</div></div><button class="btn sm '+(eq?'green':own?'ghost':'amber')+'" data-cos="'+kind+':'+c.id+'"'+(eq?' disabled':'')+'>'+(eq?'使用中':own?'换上':c.cost+' 星尘')+'</button></div>';}).join('');
       });
     }else if(tab==='set'){
+      b+=I18N.selector('settingsLanguage')+'<p class="language-coverage" data-language-coverage>'+esc(I18N.coverage())+'</p>';
       b+='<div class="set-row"><span>音效</span><button class="btn sm ghost" id="stSnd">'+(S.sound?'开':'关')+'</button></div>';
       b+='<div class="set-row"><span>音乐</span><button class="btn sm ghost" id="stBgm">'+(S.bgm?'开':'关')+'</button></div>';
       b+='<div class="set-row"><span>文字速度</span><button class="btn sm ghost" id="stSpd">'+(S.textSpeed==='fast'?'快':'标准')+'</button></div>';
       b+='<div class="set-row"><span>开场影像</span><button class="btn sm ghost" id="stIntro">再看一遍</button></div>';
       b+='<h3>关于</h3><div class="small">真实的是法，虚构的是国。<br><i>The law is real. The nations are fictional.</i><br>游戏里引用的条约和史实都是真的；案件里的国家、公司和人物是虚构的。每章结尾的“现实原型”会说明哪些地方做了改动。</div>';
-      b+='<h3>存档</h3><div class="btnrow"><button class="btn sm red" id="stReset">清空存档</button></div>';
+      b+='<h3>存档与备份</h3><p class="small muted">进度只保存在当前浏览器中；更换设备、浏览器或打开另一个本地文件，不会自动同步。清理浏览器数据前，请先导出备份。导入支持本版及旧版 JSON 存档。</p>'+
+        '<p id="saveNotice" class="save-notice" role="status"'+(SAVE_STATUS.message?'':' hidden')+'>'+esc(SAVE_STATUS.message)+'</p>'+
+        '<div class="btnrow"><button class="btn sm" id="stExport">导出备份</button><button class="btn sm ghost" id="stImport">导入备份</button><button class="btn sm red" id="stReset">清空存档</button></div>'+
+        '<input id="stSaveFile" type="file" accept=".json,application/json" hidden>';
     }
     shell('档案馆',b,tabs);
     const e=byId('meEdit');if(e)e.onclick=function(){SFX.tap();Avatar.open(false);};
@@ -82,7 +86,19 @@ const Panels=(function(){
     const bg=byId('stBgm');if(bg)bg.onclick=function(){toggleBgm();render();};
     const sp=byId('stSpd');if(sp)sp.onclick=function(){S.textSpeed=S.textSpeed==='fast'?'normal':'fast';save();SFX.tap();render();};
     const it=byId('stIntro');if(it)it.onclick=function(){close();Intro.play(true);};
-    const rs=byId('stReset');if(rs)rs.onclick=function(){if(confirm('清空全部进度、星尘和成就？这一步不能撤销。')){SAVE.reset();location.reload();}};
+    const ex=byId('stExport');if(ex)ex.onclick=function(){SAVE.export();};
+    const im=byId('stImport'),fi=byId('stSaveFile');
+    if(im&&fi){im.onclick=function(){fi.click();};fi.onchange=async function(){
+      const file=fi.files&&fi.files[0];if(!file)return;
+      try{
+        if(file.size>2*1024*1024)throw Error('存档超过 2 MB，请选择游戏导出的 JSON 文件');
+        const text=await file.text(),next=SAVE.decode(text);
+        if(!confirm('导入「'+next.profile.name+'」的存档（声望 '+next.rep+'）并替换当前进度？建议先导出当前备份。'))return;
+        if(SAVE.import(text))location.reload();
+      }catch(err){toast(esc(err.message||'读取失败，请选择有效的存档文件'),4500);}
+      finally{fi.value='';}
+    };}
+    const rs=byId('stReset');if(rs)rs.onclick=function(){if(confirm('清空全部进度、星尘和成就？请先导出需要保留的备份。')){if(SAVE.reset())location.reload();}};
   }
   function kindChip(k){return k==='fact'?'<span class="chip">史实</span>':k==='plan'?'<span class="chip amber">计划</span>':k==='spec'?'<span class="chip fact">推演</span>':'<span class="chip red">游戏故事</span>';}
   function leanChart(){
@@ -274,6 +290,7 @@ const Avatar=(function(){
       '<label>正装</label><div class="av-row">'+SUIT_COLORS.map(function(c,i){return '<button class="sw'+(i===prev.suit?' on':'')+'" data-suit="'+i+'" style="background:'+c.suit+'"></button>';}).join('')+'</div>'+
       '</div></div><div class="av-note">星海仲裁院的人来自世界各地。你是什么样子，就是什么样子。</div>'+
       '<button class="btn block" id="avOk">'+(firstRun?'报到':'保存')+'</button></div>';
+    I18N.apply(m);
     preview();
     $$('#avatar [data-skin]').forEach(function(b){b.onclick=function(){draft.skin=+b.getAttribute('data-skin');SFX.pop();render();};});
     $$('#avatar [data-hair]').forEach(function(b){b.onclick=function(){draft.hair=b.getAttribute('data-hair');SFX.pop();render();};});

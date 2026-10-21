@@ -13,8 +13,8 @@ const INTRO_SHOTS=[
  {clip:'06-nolaw',fb:'sc-c2077',cam:'camUp',amb:'room',dip:true,tx:'太空里没有警察，也没有法院。<br>能用的，只有各国签下的条约，和一次次坐下来讲道理。'},
  {clip:'07-tribunal',fb:'sc-c2077',cam:'camIn',amb:'room',tx:'2077 年，星海仲裁院。<br>这里存着人类在太空里吵过的每一架，也存着每一次是怎么吵完的。'}];
 /* 开场用哪一版画面：
-   drawn = 程序绘制的动画（默认，素材全部自有，体积小）；
-   clips = assets/intro/ 里的 7 段影像（经分析判断为 AI 生成，播放时角落会标注“画面由 AI 生成”）。
+   drawn = 程序绘制的动画（默认，体积小）；
+   clips = assets/intro/ 里的 7 段影像（保留现有 AI 标识；实际来源和授权须另行确认）。
    确认影像来源和授权后，把下面改成 'clips' 即可；调试时也可以在地址后加 ?intro=clips */
 const INTRO_CFG={mode:/[?&]intro=clips/.test(location.search)?'clips':'drawn',renderer:/[?&]intro=2d/.test(location.search)?'2d':'gl'};
 const Intro=(function(){
@@ -37,7 +37,7 @@ const Intro=(function(){
     const v=L.querySelector('video');
     const ms=Math.max(3200,stripTags(sh.tx).length*120+1600);
     let useV=false;
-    if(INTRO_CFG.mode==='clips'&&clipsOK!==false){useV=await tryClip(v,'assets/intro/'+sh.clip+'.webm');if(i===0)clipsOK=useV;}
+    if(INTRO_CFG.mode==='clips'&&clipsOK!==false){useV=await tryClip(v,typeof STANDALONE_CLIPS!=='undefined'?STANDALONE_CLIPS[sh.clip]:'assets/intro/'+sh.clip+'.webm');if(i===0)clipsOK=useV;}
     byId('introAI').classList.toggle('on',useV);
     if(useV){L.classList.add('hasvid');v.style.filter=sh.grade||'';const want=Math.max(4200,stripTags(sh.tx).length*130+1800);
       const rate=isFinite(v.duration)&&v.duration>0?clamp(v.duration*1000/want,.45,.85):.6;

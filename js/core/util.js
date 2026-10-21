@@ -66,5 +66,5 @@ document.addEventListener('click',function(e){
 /* 文本模板：{我} 换成玩家名字 */
 function fill(t){
   const name=(typeof S!=='undefined'&&S.profile&&S.profile.name)||'简';
-  return termify(String(t==null?'':t).replace(/\{我\}/g,name));
+  return termify(String(t==null?'':t).replace(/\{我\}/g,function(){return esc(name);}));
 }

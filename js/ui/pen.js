@@ -83,7 +83,7 @@ const Pen=(function(){
     h+='<div class="pe-box"><h3>信匣<small>只存在这台设备上</small></h3>';
     if(a)h+='<button class="pe-row doc" data-open="doc"><span class="pr-k">公约</span><span class="pr-t">我的星海公约 · 共 '+a+' 条</span><span class="pr-d">'+icon('ic-law')+'</span></button>';
     p.letters.forEach(function(l){
-      h+='<button class="pe-row" data-open="'+l.id+'"><span class="pr-k k-'+l.m+'">'+(l.m==='far'?'远音':'胶囊')+'</span><span class="pr-t">'+esc(l.text.replace(/\s+/g,' ').slice(0,22))+(l.text.length>22?'……':'')+'</span><span class="pr-d">'+esc(l.date.replace(/ 年 /,'.').replace(/ 月 /,'.').replace(/ 日/,''))+'</span></button>';
+      h+='<button class="pe-row" data-open="'+esc(l.id)+'"><span class="pr-k k-'+esc(l.m)+'">'+(l.m==='far'?'远音':'胶囊')+'</span><span class="pr-t">'+esc(l.text.replace(/\s+/g,' ').slice(0,22))+(l.text.length>22?'……':'')+'</span><span class="pr-d">'+esc(l.date.replace(/ 年 /,'.').replace(/ 月 /,'.').replace(/ 日/,''))+'</span></button>';
     });
     if(!n&&!a)h+='<div class="pe-empty">还没有。写好的信和条文都会收在这里。</div>';
     h+='</div>';
@@ -289,7 +289,7 @@ const Pen=(function(){
     let h=head('尾声 · 回信台','我的星海公约','');
     h+='<div class="pe-sheet paper pe-doc'+(fresh?' fresh':'')+'"><div class="pd-t">星 海 公 约</div><div class="pd-sub">'+esc(S.profile.name)+' 起草</div>'+
       '<div class="pd-pre">为了让星海对所有人开放，让后来的人也有路可走，我们约定如下：</div>'+
-      p.arts.map(function(a,i){const T=PEN_TOPIC_BY[a.topic]||PEN_TOPIC_BY.free;return '<div class="pd-art'+(fresh&&i===n-1?' new':'')+'" data-a="'+a.id+'"><b>第 '+artNo(i+1)+' 条</b><span>'+esc(a.text)+'</span><em>'+T.t+'</em><button class="pd-x" data-x="'+a.id+'" aria-label="删掉这一条">×</button></div>';}).join('')+
+      p.arts.map(function(a,i){const T=PEN_TOPIC_BY[a.topic]||PEN_TOPIC_BY.free;return '<div class="pd-art'+(fresh&&i===n-1?' new':'')+'" data-a="'+esc(a.id)+'"><b>第 '+artNo(i+1)+' 条</b><span>'+esc(a.text)+'</span><em>'+T.t+'</em><button class="pd-x" data-x="'+esc(a.id)+'" aria-label="删掉这一条">×</button></div>';}).join('')+
       '<div class="pd-sign"><div class="pd-who"><span>立约人　'+esc(S.profile.name)+'</span><span>'+dateStr()+'</span></div><div class="pd-seal">星海<br>公约</div></div></div>';
     h+='<div class="btnrow pe-acts">'+(n<KEEP_A?'<button class="btn ghost" id="peMore">'+icon('ic-pen')+'再写一条</button>':'')+'<button class="btn" id="peImg">'+icon('ic-down')+'存成图片</button></div>';
     set(h);

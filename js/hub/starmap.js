@@ -808,6 +808,7 @@ const HUD={
     const fv=byId('hudFocusV');if(fv)fv.textContent=S.focus;
     Work.hud();
     const av=byId('hudAv');if(av)av.innerHTML=avatarSVG('me');
+    I18N.apply(byId('hubHud'));
     const nx=nextCh(),ct=byId('ctaT');
     if(ct){ct.textContent=nx?(CHAPTERS[nx].year+' · '+CHAPTERS[nx].title):'六案已结 · 重温任一案';}
   },

@@ -27,6 +27,7 @@
   /* 小游戏 */
   byId('gmBack').onclick=function(){SFX.tap();Games.close();};
   /* 星图底栏 */
+  byId('btnStories').onclick=function(){SFX.tap();Stories.open();};
   byId('btnNext').onclick=function(){SFX.tap();Hub.goNext();};
   byId('mapIn').onclick=function(){SFX.tap();StarMap.zoomBy(1.5);};
   byId('mapOut').onclick=function(){SFX.tap();StarMap.zoomBy(1/1.5);};
@@ -47,8 +48,12 @@
   /* 键盘 */
   function nth(sel,k,e){if(!/^[1-9]$/.test(k))return false;const t=$$(sel)[+k-1];if(t&&!t.disabled){e.preventDefault();t.click();}return true;}
   document.addEventListener('keydown',function(e){
-    const tg=e.target&&e.target.tagName;if(tg==='INPUT'||tg==='TEXTAREA')return;
+    const tg=e.target&&e.target.tagName;if(tg==='INPUT'||tg==='TEXTAREA'||tg==='SELECT'||(e.target&&e.target.isContentEditable))return;
+    if(e.metaKey||e.altKey||(e.ctrlKey&&e.key!=='Control'))return;
+    /* 聚焦按钮时由浏览器执行 Enter / 空格，避免同时触发全局剧情快捷键。 */
+    if((e.key==='Enter'||e.key===' ')&&e.target&&e.target.closest('button,a[href]'))return;
     const k=e.key;
+    if(Stories.isOpen()){if(k==='Escape'){e.preventDefault();Stories.back();}return;}
     if(k==='Control'&&TH.running){skipHold(true);return;}
     if(e.repeat&&k!==' '&&k!=='Enter')return;
     const boot=byId('boot');
@@ -96,5 +101,6 @@
     HUD.showHub();setTimeout(function(){startChapter(m[1]);},200);}
   const g=location.hash.match(/game=(\w+)/);
   if(g){byId('boot').classList.add('off');S.profile.introSeen=true;S.profile.created=true;HUD.showHub();setTimeout(function(){Games.open(g[1]);},200);}
+  if(location.hash==='#stories'){byId('boot').classList.add('off');HUD.showHub();Stories.open();}
   if(location.hash==='#hub'){byId('boot').classList.add('off');S.profile.introSeen=true;S.profile.created=true;HUD.showHub();setTimeout(function(){Hub.focusNext(false);},100);}
 })();

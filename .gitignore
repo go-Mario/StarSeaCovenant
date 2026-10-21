@@ -2,3 +2,5 @@ tools/test/out/
 node_modules/
 .DS_Store
 www/
+dist/
+__pycache__/

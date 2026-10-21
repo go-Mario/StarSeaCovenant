@@ -319,7 +319,7 @@ const Work=(function(){
     if(W.lastWeek)h+='<div class="small muted" style="margin-top:8px">上周：共 '+hours(W.lastWeek.tot)+'，其中加班 '+hours(W.lastWeek.ot)+'，出庭 '+W.lastWeek.hear+' 次。</div>';
     if(W.inbox.length){
       h+='<h3>收件箱<small>已处理 '+W.inbox.length+' 封</small></h3>';
-      h+=W.inbox.slice(0,6).map(function(x){return '<div class="mail-item"><div class="mi-h"><b>'+x.title+'</b><span>'+x.from+' · '+dateStr(x.day)+'</span></div><div class="mi-r">你的处理：'+x.pick+'</div></div>';}).join('');
+      h+=W.inbox.slice(0,6).map(function(x){return '<div class="mail-item"><div class="mi-h"><b>'+esc(x.title)+'</b><span>'+esc(x.from)+' · '+dateStr(x.day)+'</span></div><div class="mi-r">你的处理：'+esc(x.pick)+'</div></div>';}).join('');
     }
     return h;
   }

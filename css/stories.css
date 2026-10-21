@@ -1,0 +1,66 @@
+/* Shared-event stories: paper records inside a small, inhabited station. */
+.language-control{display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px;letter-spacing:0;color:var(--ink-2);margin-top:12px}
+.language-select{font:inherit;max-width:190px;padding:7px 9px;border:1px solid var(--paper-edge);border-radius:6px;background:var(--paper);color:var(--ink);min-height:36px}
+.language-coverage{font-size:11px;line-height:1.5;color:var(--ink-3);max-width:440px;margin:8px auto;text-align:center;letter-spacing:0}
+.hub-actions{display:flex;flex-direction:column;gap:8px;max-width:calc(100% - 50px)}
+.hub-actions .cta{width:100%;max-width:100%}
+#btnStories{background:linear-gradient(120deg,rgba(48,126,137,.4),rgba(17,45,66,.85));border-color:#63a3a8;color:#e6f6ef}
+#btnStories .cta-k{color:#a0d8ce}
+#stories{z-index:75;background:#0b1420;overflow-y:auto;overscroll-behavior:contain;color:#e8eceb;padding:calc(16px + var(--safe-t)) 24px calc(32px + var(--safe-b))}
+.ns-wrap{max-width:1120px;margin:auto}
+.ns-top{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:28px;flex-wrap:wrap}
+.ns-top .language-control{margin:0;color:#b0c2c5}
+.ns-top button{color:#d5e6e4;padding:10px 0;min-height:44px;font-size:13px}
+.ns-eyebrow{font-family:var(--f-mono);color:#89b7be;letter-spacing:.12em;font-size:11px;margin-bottom:12px}
+.ns-title{font-family:var(--f-serif);font-size:clamp(32px,5vw,62px);font-weight:500;line-height:1.2;letter-spacing:.06em;color:#f3e9d7;margin-bottom:16px}
+.ns-lead{max-width:700px;font-size:16px;color:#bdcccf;line-height:1.9;margin-bottom:24px}
+.ns-map{width:100%;height:180px;background:radial-gradient(ellipse at 70% 0,rgba(54,100,126,.3),transparent 70%);border-top:1px solid #2b3f4b;border-bottom:1px solid #2b3f4b;margin-bottom:24px}
+.ns-roles{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.ns-role{color:#e8eceb;text-align:left;background:#12222f;border:1px solid #304854;border-radius:12px;padding:22px;display:flex;flex-direction:column;min-width:0;transition:border-color .15s,transform .15s}
+.ns-role:hover{border-color:#b8ac87;transform:translateY(-3px)}
+.ns-role .ns-role-art{height:110px;align-self:flex-end;margin:-6px 0 0;opacity:.9}
+.ns-role-art svg{height:100%;width:85px}
+.ns-role h2{font-family:var(--f-serif);font-size:24px;font-weight:500;color:#efe1c8;margin-top:12px}
+.ns-role p{font-size:13px;color:#b8c9ce;line-height:1.8;margin:12px 0 18px}
+.ns-role .ns-enter{margin-top:auto;border-top:1px solid #304854;padding-top:16px;font-size:13px;color:#a9d7d2}
+.ns-pill{font-size:11px;color:#a5c9ca;border:1px solid #37545e;padding:3px 8px;border-radius:30px;display:inline-block;width:fit-content}
+.ns-grid{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:24px;align-items:start}
+.ns-paper{background:#efe8da;color:#26333b;border-radius:10px;padding:clamp(20px,4vw,40px);box-shadow:0 16px 55px #0003}
+.ns-paper h2{font-family:var(--f-serif);font-size:27px;line-height:1.5;font-weight:500;margin:8px 0 18px}
+.ns-paper p{line-height:1.95;margin:12px 0;font-size:15px}
+.ns-paper .ns-eyebrow{color:#5e777e}
+.ns-paper blockquote{border-left:2px solid #a77e50;padding:8px 0 8px 18px;margin:22px 0;color:#626459;font-family:var(--f-serif);font-size:17px}
+.ns-docs{display:grid;gap:10px;margin:22px 0}
+.ns-doc{width:100%;background:#e4ddce;color:#334650;border:1px solid #c7c4b8;border-radius:8px;padding:14px;text-align:left;line-height:1.7;min-height:48px}
+.ns-doc b{display:block;font-size:14px;margin-bottom:4px}
+.ns-doc span{font-size:12px;color:#6b7574}
+.ns-doc.is-read{border-left:4px solid #507e79}
+.ns-document{white-space:pre-wrap;background:#faf6ee;border:1px solid #cfc6b5;padding:20px;line-height:1.9;font-size:14px;margin:18px 0;border-radius:6px}
+.ns-aside{border:1px solid #304854;border-radius:10px;padding:20px;background:#101e2b}
+.ns-aside h3{font-size:13px;color:#e2d8c0;font-weight:500;margin:6px 0 12px}
+.ns-aside p,.ns-aside li{font-size:12px;line-height:1.85;color:#a4bbc2;overflow-wrap:anywhere}
+.ns-aside ul{padding-left:17px}
+.ns-meter{display:flex;justify-content:space-between;border-bottom:1px solid #2b3f4b;padding:12px 0;font-size:12px;color:#b5ccd0}
+.ns-choices{display:grid;gap:10px;margin-top:22px}
+.ns-choice{width:100%;text-align:left;border:1px solid #a8b4ae;background:#f7f4ed;color:#263c43;padding:17px;border-radius:8px;line-height:1.7}
+.ns-choice b{display:block;font-size:14px;margin-bottom:6px}
+.ns-choice span{display:block;font-size:12px;color:#6c7777}
+.ns-choice:hover{border-color:#306965;background:#fffdf8}
+.ns-choice:disabled{opacity:.55;cursor:not-allowed}
+.ns-paper .btn{margin-top:14px;min-height:44px}
+.ns-note{font-size:12px!important;color:#667771;line-height:1.8!important}
+.ns-status{min-height:25px;font-size:13px;color:#866b39;margin:12px 0}
+.ns-search{width:100%;padding:12px;border:1px solid #b3bbb4;border-radius:6px;font:inherit;font-size:14px;background:#faf7ef;color:#253d42;margin-bottom:10px}
+.ns-footer{font-size:12px;color:#829da7;line-height:1.9;margin:28px 0;max-width:850px}
+.ns-ledger{border-top:1px solid #304854;padding-top:22px;margin-top:28px}
+.ns-ledger h2{font-size:18px;font-weight:500;color:#e1d6c0;margin-bottom:10px}
+.ns-ledger li{font-size:13px;color:#b4c8cb;margin:8px 0;line-height:1.8}
+.ns-ledger ol{padding-left:22px}
+.ns-glossary details{border-top:1px solid #b9b5a9;padding:12px 0;font-size:13px}
+.ns-glossary summary{cursor:pointer;color:#38595c}
+#stories :focus-visible,.language-select:focus-visible{outline:3px solid #dca651;outline-offset:4px}
+html[lang=en] .pn-head h2{letter-spacing:0;font-size:19px}
+html[lang=en] .bt-title{font-size:clamp(29px,5vw,48px);letter-spacing:.03em}
+html[lang=en] .cta-k{letter-spacing:.08em}
+@media(max-width:700px){#stories{padding-left:18px;padding-right:18px}.ns-roles{grid-template-columns:1fr}.ns-role{padding:20px}.ns-role .ns-role-art{height:80px;float:right}.ns-grid{grid-template-columns:1fr}.ns-aside{order:2}.ns-top{margin-bottom:20px}.ns-top .language-control{font-size:11px}.ns-map{height:130px}.ns-lead{font-size:14px}.ns-paper h2{font-size:24px}.ns-title{font-size:36px}.ns-paper p{font-size:14px}.ns-choices{gap:12px}}
+@media(prefers-reduced-motion:reduce){.ns-role{transition:none}.ns-role:hover{transform:none}}

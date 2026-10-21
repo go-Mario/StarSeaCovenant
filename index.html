@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0A0F1E">
@@ -18,6 +18,7 @@
 <link rel="stylesheet" href="css/pen.css">
 <link rel="stylesheet" href="css/work.css">
 <link rel="stylesheet" href="css/intro.css">
+<link rel="stylesheet" href="css/stories.css">
 </head>
 <body>
 <div id="fatalbox"></div>
@@ -74,6 +75,8 @@
     <div class="bt-sig">Stellar Covenant</div>
     <div class="bt-caps">AN ARBITRATION STORY　·　1957 — 2077</div>
     <button class="btn red" id="bootGo">进入星图</button>
+    <label class="language-control" for="bootLanguage">Language / 语言 <select class="language-select" id="bootLanguage"><option value="zh-CN">简体中文</option><option value="en">English · preview</option></select></label>
+    <p class="language-coverage" data-language-coverage></p>
     <div class="bt-motto">真实的是法，虚构的是国</div>
     <div class="bt-motto-en">The law is real. The nations are fictional.</div>
   </div>
@@ -114,7 +117,8 @@
     <button class="iconbtn btn-bgm" aria-label="音乐"></button>
   </header>
   <nav id="hubBar">
-    <button class="cta" id="btnNext"><span class="cta-k">继续主线</span><b id="ctaT">1980 · 天降核雨</b></button>
+    <div class="hub-actions"><button class="cta" id="btnStories"><span class="cta-k">人物主线 · 共同事件</span><b>回信前夜 / Night Shift</b></button>
+    <button class="cta" id="btnNext"><span class="cta-k">继续主线</span><b id="ctaT">1980 · 天降核雨</b></button></div>
     <div class="map-ctl">
       <button id="mapIn" aria-label="放大">+</button>
       <button id="mapOut" aria-label="缩小">−</button>
@@ -125,6 +129,7 @@
 
 <!-- ===================== 面板 / 小游戏 ===================== -->
 <div id="panel" class="layer"></div>
+<div id="stories" class="layer" role="region" aria-label="人物主线"></div>
 <div id="pen" class="layer"></div>
 <div id="memo" class="layer"><div class="memo-card paper" id="memoCard"></div></div>
 <div id="game" class="layer">
@@ -180,12 +185,13 @@
 <div id="adModal" class="layer"><div class="ad-in paper"><div class="ad-k">激励视频 · 开发占位</div><div class="ad-why"></div><div class="ad-cnt">3</div><div class="muted small">正式版接入小程序/应用的广告组件后，这里会播放一段视频。</div><button class="btn ghost sm ad-close">不看了</button></div></div>
 <div id="termTip"></div>
 <div id="achpop"><svg class="ic" style="width:30px;height:30px;color:#E6B34D"><use href="#ic-star"/></svg><div><div class="at" id="acht"></div><div class="ad" id="achd"></div></div></div>
-<div id="toast"></div>
+<div id="toast" role="status" aria-live="polite"></div>
 <div id="iris"></div>
 <canvas id="fx"></canvas>
 
 <script src="js/core/util.js"></script>
 <script src="js/core/save.js"></script>
+<script src="js/core/i18n.js"></script>
 <script src="js/core/audio.js"></script>
 <script src="js/core/fx.js"></script>
 <script src="js/core/economy.js"></script>
@@ -224,6 +230,8 @@
 <script src="js/ui/cine.js"></script>
 <script src="js/ui/intro.js"></script>
 <script src="js/ui/boot.js"></script>
+<script src="js/worlds/nightshift.js"></script>
+<script src="js/ui/stories.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>
