@@ -1427,7 +1427,6 @@ const I18N_CONTENT={
 "掉在谁的土地上，谁来赔？":"It falls on whose ground; who pays?",
 "旧存档已搬到新版本：已完成的章节、法典和先例都还在，另外送你一些星尘。":"Your old save has been carried into the new edition: finished chapters, the Code and precedents are all still here, plus some stardust on us.",
 "有时候，天上的东西会掉下来。":"Sometimes, things in the sky come down.",
-"新故事 · 人间星海":"A new story · Ordinary Lives",
 "画面由 AI 生成":"Imagery generated with AI",
 "轻触屏幕跳到下一句":"Tap the screen to advance",
 "主线从这里开始":"The main story starts here",
@@ -2042,5 +2041,4 @@ const I18N_FRAGS={
 " — ":" — ",
 " · 已玩过":" · played",
 " · 恢复精力":" · restores energy",
-"新故事 · 人间星海":"A new story · Ordinary Lives",
 };

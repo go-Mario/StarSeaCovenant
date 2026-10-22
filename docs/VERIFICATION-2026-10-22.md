@@ -16,7 +16,7 @@
 
 - 全部既有测试通过（smoke / flow / cine / film / map / stories / theater /
   work / pen / quiz / search / options / save / portable-save / sim-lander /
-  sim-sling / lives-model / lives-browser）。portable-save 验证离线单文件
+  sim-sling）。portable-save 验证离线单文件
   `dist/starsea.html` 六章、设置与内嵌视频均可离线运行。
 - 英文模式逐屏走查（Playwright，桌面视口 1365×900）：
   - 星图、开庭剧场降落页、六章案卷卡片：**0 个中文字符**。
@@ -24,8 +24,7 @@
   - 第一章对白、机制卡、证物、裁决书结构均为英文；术语气泡指向英文释义。
   - 语言切换后面板内容立即变为英文，中文模式完全还原。
   - 流程无 JS 报错；英文模式下录入名字后星图名牌同步显示英文默认名。
-- 覆盖率自检脚本按源码提取 2,300+ 唯一字符串，除 `I18N.t()` 内联参数与
-  已双语的 lives 模块外全部进入词典；未覆盖字符串按设计保留中文原文（游戏不损坏）。
+- 覆盖率自检脚本按源码提取 2,300+ 唯一字符串，除 `I18N.t()` 内联参数外全部进入词典；未覆盖字符串按设计保留中文原文（游戏不损坏）。
 
 ## 已知边界
 
