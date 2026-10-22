@@ -65,7 +65,7 @@ const Panels=(function(){
           return '<div class="shop-item cos"><span class="cos-prev '+c.css+'">'+(kind==='seal'?'印':'纸')+'</span><div><b>'+c.name+'</b><div class="muted small">'+c.d+'</div></div><button class="btn sm '+(eq?'green':own?'ghost':'amber')+'" data-cos="'+kind+':'+c.id+'"'+(eq?' disabled':'')+'>'+(eq?'使用中':own?'换上':c.cost+' 星尘')+'</button></div>';}).join('');
       });
     }else if(tab==='set'){
-      b+=I18N.selector('settingsLanguage')+'<p class="language-coverage" data-language-coverage>'+esc(I18N.coverage())+'</p>';
+      b+=I18N.selector('settingsLanguage');
       b+='<div class="set-row"><span>音效</span><button class="btn sm ghost" id="stSnd">'+(S.sound?'开':'关')+'</button></div>';
       b+='<div class="set-row"><span>音乐</span><button class="btn sm ghost" id="stBgm">'+(S.bgm?'开':'关')+'</button></div>';
       b+='<div class="set-row"><span>文字速度</span><button class="btn sm ghost" id="stSpd">'+(S.textSpeed==='fast'?'快':'标准')+'</button></div>';

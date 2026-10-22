@@ -31,8 +31,16 @@ document.addEventListener('visibilitychange',function(){
 
 let BUS=null;
 function makeIR(c,sec,decay){
+  /* 暗色混响：白噪先过一阶低通再衰减。
+     纯白噪的 IR 会给每一段铺底加一层“沙沙”的高频尾巴，听起来像电流声。 */
   const rate=c.sampleRate,len=Math.max(1,Math.floor(rate*sec)),buf=c.createBuffer(2,len,rate);
-  for(let ch=0;ch<2;ch++){const d=buf.getChannelData(ch);for(let i=0;i<len;i++){d[i]=(Math.random()*2-1)*Math.pow(1-i/len,decay);}}
+  for(let ch=0;ch<2;ch++){
+    const d=buf.getChannelData(ch);let lp=0;
+    for(let i=0;i<len;i++){
+      lp=lp*.82+(Math.random()*2-1)*.18;
+      d[i]=lp*Math.pow(1-i/len,decay);
+    }
+  }
   return buf;
 }
 function bus(){
@@ -43,7 +51,7 @@ function bus(){
   const comp=c.createDynamicsCompressor();comp.threshold.value=-20;comp.knee.value=26;comp.ratio.value=2.6;comp.attack.value=.006;comp.release.value=.22;
   master.connect(tame);tame.connect(comp);comp.connect(c.destination);
   const conv=c.createConvolver();conv.buffer=makeIR(c,2.0,2.6);
-  const pre=c.createDelay(.2);pre.delayTime.value=.022;const wet=c.createGain();wet.gain.value=.9;
+  const pre=c.createDelay(.2);pre.delayTime.value=.022;const wet=c.createGain();wet.gain.value=.6;
   pre.connect(conv);conv.connect(wet);wet.connect(master);
   BUS={ctx:c,master:master,verb:pre};return BUS;
 }
@@ -192,11 +200,13 @@ const SONGS={
     ch:[[41,[57,60,64,67]],[38,[57,62,65,69]],[36,[55,60,64,67]],[43,[55,59,62,67]]],
     str:.022,sparse:[[0,2,12],[6,3,12],[12,1,24]],sparseVel:.22,bass:[[0,16]],bassVol:.035}
 };
-const MUSIC_VOL=1.8;
+const MUSIC_VOL=1.35;
 const MUSIC={on:false,mode:'retro',step:0,nextT:0,timer:null,bus:null,mg:null,loopN:0,wind:null,crk:null,
   hz(n){return 440*Math.pow(2,(n-69)/12);},
   start(){const c=ac();if(!c||this.on)return;this.on=true;
-    this.bus=c.createGain();this.bus.gain.value=S.bgm?MUSIC_VOL:0;toBus(this.bus,0,0);
+    this.bus=c.createGain();this.bus.gain.value=S.bgm?MUSIC_VOL:0;
+    const hp=c.createBiquadFilter();hp.type='highpass';hp.frequency.value=38;hp.Q.value=.6;
+    this.bus.connect(hp);toBus(hp,0,0);
     this.mg=c.createGain();this.mg.gain.value=1;this.mg.connect(this.bus);
     this.step=0;this.loopN=0;this.nextT=c.currentTime+.12;
     this.timer=setInterval(()=>this.loop(),50);
@@ -248,12 +258,12 @@ const MUSIC={on:false,mode:'retro',step:0,nextT:0,timer:null,bus:null,mg:null,lo
     const lp=c.createBiquadFilter();lp.type='lowpass';lp.frequency.setValueAtTime(420,t);lp.frequency.linearRampToValueAtTime(1050,t+dur*.55);lp.Q.value=.5;
     const g=c.createGain(),at=Math.min(1.1,dur*.35);
     g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+at);g.gain.setValueAtTime(vol,t+dur*.8);g.gain.linearRampToValueAtTime(.0001,t+dur+.9);
-    lp.connect(g);this.out(g,pan||0,.45);
+    lp.connect(g);this.out(g,pan||0,.28);
     const self=this;ch.forEach(function(n){[-7,7].forEach(function(ct){const o=c.createOscillator();o.type='sawtooth';o.frequency.value=self.hz(n);o.detune.value=ct+(Math.random()-.5)*5;
       const og=c.createGain();og.gain.value=1/ch.length;o.connect(og);og.connect(lp);o.start(t);o.stop(t+dur+1);});});},
   choir(ch,t,dur,vol){const c=ac();if(!c)return;
     const g=c.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+1.4);g.gain.setValueAtTime(vol,t+dur*.8);g.gain.linearRampToValueAtTime(.0001,t+dur+1.2);
-    const lp=c.createBiquadFilter();lp.type='lowpass';lp.frequency.value=1600;lp.connect(g);this.out(g,0,.6);
+    const lp=c.createBiquadFilter();lp.type='lowpass';lp.frequency.value=1600;lp.connect(g);this.out(g,0,.35);
     const lfo=c.createOscillator(),lg=c.createGain();lfo.frequency.value=4.6;lg.gain.value=4;lfo.connect(lg);lfo.start(t);lfo.stop(t+dur+1.3);
     const self=this;ch.forEach(function(n){['sine','triangle'].forEach(function(tp,k){const o=c.createOscillator();o.type=tp;o.frequency.value=self.hz(n+12);o.detune.value=k?6:-6;lg.connect(o.detune);
       const og=c.createGain();og.gain.value=(k?.5:.8)/ch.length;o.connect(og);og.connect(lp);o.start(t);o.stop(t+dur+1.3);});});},
@@ -300,13 +310,31 @@ const MUSIC={on:false,mode:'retro',step:0,nextT:0,timer:null,bus:null,mg:null,lo
     s.connect(f);f.connect(g);g.connect(this.bus);s.start(t);lfo.start(t);this.wind={s:s,lfo:lfo,g:g};},
   windOff(){const w=this.wind;if(!w)return;this.wind=null;const c=ac();if(!c)return;const t=c.currentTime;
     try{w.g.gain.cancelScheduledValues(t);w.g.gain.setValueAtTime(w.g.gain.value,t);w.g.gain.linearRampToValueAtTime(0,t+1.5);w.s.stop(t+1.6);w.lfo.stop(t+1.6);}catch(e){}},
-  /* 黑胶底噪：只在复古年代出现 */
+  /* 黑胶底噪：只在复古年代出现。
+     之前每采样都叠一层白噪、爆点概率 0.0009（48kHz 下每秒约 43 次），
+     听起来是持续的沙沙静电声。现在改成：极轻的低频表面噪声 +
+     每秒 4–6 个稀疏爆点，并加低通去掉刺耳的高频。 */
   crackleOn(){if(this.crk||!this.bus)return;const c=ac();if(!c)return;
-    const len=c.sampleRate*3,buf=c.createBuffer(1,len,c.sampleRate),d=buf.getChannelData(0);
-    for(let i=0;i<len;i++){d[i]=(Math.random()<.0009?(Math.random()*2-1)*.9:0)+(Math.random()*2-1)*.012;}
-    const s=c.createBufferSource();s.buffer=buf;s.loop=true;const f=c.createBiquadFilter();f.type='bandpass';f.frequency.value=2400;f.Q.value=.5;
-    const g=c.createGain(),t=c.currentTime;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.16,t+1.5);
-    s.connect(f);f.connect(g);g.connect(this.bus);s.start(t);this.crk={s:s,g:g};},
+    const len=c.sampleRate*4,buf=c.createBuffer(1,len,c.sampleRate),d=buf.getChannelData(0);
+    let lp=0;
+    for(let i=0;i<len;i++){
+      /* 表面底噪：平滑过的低频噪声，只留一点点“存在感” */
+      lp=lp*.93+(Math.random()*2-1)*.07;
+      d[i]=lp*.0016;
+      /* 稀疏爆点：带短衰减，彼此不重叠 */
+      if(Math.random()<.00011){
+        const amp=.28+Math.random()*.3,dec=5+Math.random()*9;
+        const n=Math.min(48,len-i-1);
+        for(let k=0;k<n;k++)d[i+k]+=(Math.random()*2-1)*amp*Math.exp(-k/dec);
+        i+=n;
+      }
+    }
+    const s=c.createBufferSource();s.buffer=buf;s.loop=true;
+    const hp=c.createBiquadFilter();hp.type='highpass';hp.frequency.value=180;
+    const lpf=c.createBiquadFilter();lpf.type='lowpass';lpf.frequency.value=3000;lpf.Q.value=.4;
+    const g=c.createGain(),t=c.currentTime;
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.055,t+2.2);
+    s.connect(hp);hp.connect(lpf);lpf.connect(g);g.connect(this.bus);s.start(t);this.crk={s:s,g:g};},
   crackleOff(){const k=this.crk;if(!k)return;this.crk=null;const c=ac();if(!c)return;const t=c.currentTime;
     try{k.g.gain.cancelScheduledValues(t);k.g.gain.setValueAtTime(k.g.gain.value,t);k.g.gain.linearRampToValueAtTime(0,t+1.2);k.s.stop(t+1.3);}catch(e){}},
   schedule(song,st,t,spb){
@@ -316,7 +344,7 @@ const MUSIC={on:false,mode:'retro',step:0,nextT:0,timer:null,bus:null,mg:null,lo
     if(pos===0){
       if(song.str)this.str(v,t,barDur*.98,song.str,0);
       if(song.choir)this.choir(v,t,barDur*.98,song.choir);
-      if(song.bellTop)this.bell(v[v.length-1]+12,t+.02,.028);
+      if(song.bellTop)this.bell(v[v.length-1]+12,t+.02,.018);
       if(song.timp&&bar===0)this.timp(root+12,t,.11);
     }
     if(song.bass)song.bass.forEach(function(b){if(b[0]===pos)self.bas(root+(b[2]||0),t,b[1]*spb,song.bassVol||.05);});

@@ -65,3 +65,14 @@
 #introBar{flex:1;height:2px;background:rgba(255,255,255,.14)}#introBar i{display:block;height:100%;width:0;background:var(--amber);transition:width .3s linear}
 .ibtn{display:flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.35);color:#D4D9E2;font-size:12px;letter-spacing:.1em}
 .ibtn .ic{width:13px;height:13px}
+
+/* 矮屏（笔记本、横放手机）：收紧开机页纵向间距，避免格言被裁掉 */
+@media(max-height:780px){
+  .bt-photo{flex:1}
+  .bt-paper{gap:4px;padding:10px 20px calc(10px + var(--safe-b))}
+  .bt-title{font-size:clamp(30px,6.4vw,44px)}
+  .bt-sig{font-size:clamp(24px,4.6vw,34px)}
+  #bootGo{margin-top:8px}
+  .bt-motto{margin-top:6px!important;font-size:12px}
+  .bt-motto-en{font-size:10px}
+}
